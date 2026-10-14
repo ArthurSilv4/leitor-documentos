@@ -60,6 +60,9 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   return {
+    // `vite build --mode artifact` gera a versão estática para o claude.ai
+    base: mode === 'artifact' ? './' : '/',
+    build: mode === 'artifact' ? { outDir: 'dist-artifact' } : undefined,
     plugins: [react(), tailwindcss(), apiPlugin(env)],
     resolve: {
       alias: {

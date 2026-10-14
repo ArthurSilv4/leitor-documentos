@@ -6,7 +6,7 @@ import { registry } from '@/lib/visual-registry'
 
 const statusText = {
   extracting: 'Procurando dados para visualizar…',
-  composing: 'Jev está escolhendo e organizando os componentes…',
+  composing: 'Escolhendo e organizando os componentes…',
 }
 
 export function VisualPanel({ visual, isStreaming }: { visual: Visual; isStreaming: boolean }) {

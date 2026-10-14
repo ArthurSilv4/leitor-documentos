@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { ChatEvent, ChatRequestBody } from '@/lib/chat-protocol'
+import { runChatInBrowser } from '@/lib/browser-chat'
 import type { ChatDocument, Conversation, Message } from '@/lib/chat-types'
 
 const STORAGE_KEY = 'doc-chat:conversations'
@@ -26,6 +27,23 @@ function save(conversations: Conversation[]) {
 function titleFrom(text: string, docs: ChatDocument[]) {
   const base = text.trim() || docs[0]?.name || 'Nova conversa'
   return base.length > 48 ? `${base.slice(0, 48)}…` : base
+}
+
+// Na versão artifact não há servidor: o fluxo roda na própria página.
+const IS_ARTIFACT = import.meta.env.MODE === 'artifact'
+
+async function* fetchChat(body: ChatRequestBody, signal: AbortSignal): AsyncGenerator<ChatEvent> {
+  const response = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal,
+  })
+  if (!response.ok) {
+    const data = await response.json().catch(() => null)
+    throw new Error(data?.error ?? `Erro HTTP ${response.status}`)
+  }
+  yield* readNdjson(response)
 }
 
 async function* readNdjson(response: Response): AsyncGenerator<ChatEvent> {
@@ -125,17 +143,10 @@ export function useChat() {
       }
 
       try {
-        const response = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-          signal: controller.signal,
-        })
-        if (!response.ok) {
-          const data = await response.json().catch(() => null)
-          throw new Error(data?.error ?? `Erro HTTP ${response.status}`)
-        }
-        for await (const event of readNdjson(response)) {
+        const events = IS_ARTIFACT
+          ? runChatInBrowser(body, controller.signal)
+          : fetchChat(body, controller.signal)
+        for await (const event of events) {
           updateMessage(conv.id, assistantMsg.id, (m) => applyEvent(m, event))
         }
       } catch (err) {

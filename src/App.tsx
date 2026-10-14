@@ -43,7 +43,7 @@ function App() {
   )
 
   return (
-    <div className="flex h-svh">
+    <div className="flex h-full">
       <div className="hidden md:block">{sidebar}</div>
 
       {sidebarOpen && (

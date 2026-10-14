@@ -5,8 +5,9 @@ import type { ChatEvent, ChatRequestBody } from '../src/lib/chat-protocol.ts'
 import { catalog } from '../src/lib/visual-catalog.ts'
 import type { ServerConfig } from './config.ts'
 import { createJevEvaluator } from './evaluator.ts'
-import { extractCandidates, layoutCandidates } from './extract.ts'
-import { answerSystemPrompt } from './prompts.ts'
+import { answerSystemPrompt } from '../src/lib/prompts.ts'
+import { layoutCandidates } from '../src/lib/visual-extract.ts'
+import { extractCandidates } from './extract.ts'
 
 function errorMessage(err: unknown) {
   return err instanceof Error ? err.message : String(err)

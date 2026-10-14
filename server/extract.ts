@@ -1,60 +1,13 @@
 import type { Experimental_CompositionCandidate } from '@json-render/core'
 import type { OpenRouter } from '@openrouter/sdk'
-import { z } from 'zod'
 
 import type { ChatRequestBody } from '../src/lib/chat-protocol.ts'
-import { contentComponents, visualComponents, type ContentComponent } from '../src/lib/visual-catalog.ts'
-import { documentsContext } from './prompts.ts'
-
-const MAX_BLOCKS = 8
-
-function componentGuide(): string {
-  return contentComponents
-    .map((name) => {
-      const def = visualComponents[name]
-      return `### ${name}\n${def.description}\nprops: ${JSON.stringify(z.toJSONSchema(def.props))}`
-    })
-    .join('\n\n')
-}
-
-function systemPrompt(hasDocuments: boolean): string {
-  return `Você prepara blocos visuais que ajudam a pessoa a entender a resposta para a pergunta dela.
-Leia ${hasDocuments ? 'os documentos e ' : ''}a conversa e extraia de 0 a ${MAX_BLOCKS} blocos usando os componentes abaixo.
-Outro modelo vai escolher quais blocos mostrar e em que ordem, então cada bloco precisa fazer sentido sozinho.
-
-Regras:
-- Use apenas dados ${hasDocuments ? 'presentes nos documentos' : 'amplamente conhecidos e estáveis'}. Nunca invente números, datas ou citações.
-- Prefira variedade: um bloco por tipo de informação (ex.: métricas, um gráfico, uma linha do tempo).
-- Gráficos só com valores numéricos comparáveis na mesma unidade. Datas em ordem cronológica.
-- Textos curtos, em português do Brasil.
-- Se a pergunta é simples, uma saudação ou não tem nada que valha a pena visualizar, retorne "blocks": [].
-- Campos que aceitam null devem ser enviados como null quando não houver valor.
-
-Responda somente com JSON neste formato:
-{"blocks":[{"component":"<nome>","description":"<o que o bloco mostra, em uma frase>","props":{...}}]}
-
-Componentes disponíveis:
-
-${componentGuide()}`
-}
-
-const blockSchema = z.object({
-  component: z.string(),
-  description: z.string(),
-  props: z.record(z.string(), z.unknown()),
-})
-
-function parseJson(text: string): unknown {
-  const cleaned = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/```$/, '')
-  return JSON.parse(cleaned)
-}
-
-// Campos nullable omitidos pelo modelo viram null para passar na validação.
-function fillNulls(props: Record<string, unknown>, shape: Record<string, unknown>) {
-  const filled = { ...props }
-  for (const key of Object.keys(shape)) if (filled[key] === undefined) filled[key] = null
-  return filled
-}
+import {
+  blocksToCandidates,
+  extractionInput,
+  extractionInstructions,
+  parseJson,
+} from '../src/lib/visual-extract.ts'
 
 export async function extractCandidates(
   client: OpenRouter,
@@ -62,12 +15,6 @@ export async function extractCandidates(
   body: ChatRequestBody,
   signal: AbortSignal,
 ): Promise<Experimental_CompositionCandidate[]> {
-  const conversation = body.messages
-    .slice(-6)
-    .map((m) => `${m.role === 'user' ? 'Pessoa' : 'Assistente'}: ${m.content}`)
-    .join('\n\n')
-  const docs = documentsContext(body.documents)
-
   const result = await client.chat.send(
     {
       chatRequest: {
@@ -75,11 +22,8 @@ export async function extractCandidates(
         stream: false,
         responseFormat: { type: 'json_object' },
         messages: [
-          { role: 'system', content: systemPrompt(body.documents.length > 0) },
-          {
-            role: 'user',
-            content: `${docs ? `Documentos:\n\n${docs}\n\n` : ''}Conversa:\n\n${conversation}`,
-          },
+          { role: 'system', content: extractionInstructions(body.documents.length > 0) },
+          { role: 'user', content: extractionInput(body) },
         ],
       },
     },
@@ -89,52 +33,5 @@ export async function extractCandidates(
   if (!('choices' in result)) throw new Error('Resposta inesperada do modelo extrator')
   const content = result.choices[0]?.message?.content
   if (typeof content !== 'string') return []
-
-  const parsed = z.object({ blocks: z.array(z.unknown()) }).safeParse(parseJson(content))
-  if (!parsed.success) throw new Error('O modelo extrator retornou um JSON inválido')
-
-  const candidates: Experimental_CompositionCandidate[] = []
-  for (const raw of parsed.data.blocks.slice(0, MAX_BLOCKS)) {
-    const block = blockSchema.safeParse(raw)
-    if (!block.success) continue
-    const type = block.data.component as ContentComponent
-    if (!contentComponents.includes(type)) continue
-
-    const propsSchema = visualComponents[type].props as z.ZodObject
-    const props = propsSchema.safeParse(fillNulls(block.data.props, propsSchema.shape))
-    if (!props.success) continue
-
-    candidates.push({
-      id: `block_${candidates.length + 1}`,
-      description: `${type}: ${block.data.description}`,
-      element: { type, props: props.data as Record<string, unknown> },
-      root: false,
-    })
-  }
-  return candidates
-}
-
-// Estruturas de layout que o Jev pode usar para organizar os blocos.
-export function layoutCandidates(content: Experimental_CompositionCandidate[]) {
-  const layout: Experimental_CompositionCandidate[] = [
-    {
-      id: 'panel',
-      description: 'Painel vertical que empilha os blocos visuais da resposta',
-      element: {
-        type: 'Stack',
-        props: { direction: 'vertical', gap: 'md', align: 'stretch', justify: null, className: null },
-      },
-    },
-  ]
-
-  const metrics = content.filter((c) => c.element.type === 'Metric').length
-  if (metrics >= 2) {
-    layout.push({
-      id: 'metrics_grid',
-      description: 'Grade de colunas que coloca métricas lado a lado',
-      element: { type: 'Grid', props: { columns: Math.min(metrics, 3), gap: 'md', className: null } },
-      root: false,
-    })
-  }
-  return layout
+  return blocksToCandidates(parseJson(content))
 }
