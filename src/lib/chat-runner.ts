@@ -36,7 +36,7 @@ export function visualGateQuestions(body: ChatRequestBody) {
         type: 'choice' as const,
         instructions:
           'A pessoa fez uma pergunta, geralmente sobre documentos anexados. Decida se, além da resposta em texto, um painel visual ajudaria de verdade a entender a resposta. ' +
-          'Escolha "visual" só quando a resposta tiver uma estrutura que fica mais clara desenhada: processo com etapas ou status, troca entre vários atores, permissões por perfil, comparação entre opções, números comparáveis, cronologia, ou visão geral de muitas partes. ' +
+          'Escolha "visual" só quando um explicador interativo ajudaria a entender: processo com etapas ou status, dúvida que depende da situação da pessoa, o que cada perfil pode fazer, consequências de uma ação, regra com exemplos, uma tela do sistema, comparação entre opções ou números. ' +
           'Escolha "texto" para perguntas pontuais ou factuais, sim ou não, uma definição curta, pedidos de redação ou resumo corrido, saudações e conversa. Na dúvida, escolha "texto".',
         criteria: {
           visual: 'Um painel visual ajuda de verdade a entender a resposta',
@@ -101,7 +101,7 @@ async function prepareVisual(
       documentos: body.documents.map((d) => d.name),
     },
     instructions: {
-      next: 'Inclua só os blocos que ajudam a responder a pergunta. Conceitos e diagramas primeiro, depois matrizes, comparações, métricas e gráficos, depois detalhes e citações.',
+      next: 'Inclua só os blocos que ajudam a responder a pergunta; poucos e bons. Conceito e jornada primeiro, depois guias, papéis, causas e efeitos e regras, depois números, e o teste rápido por último.',
     },
     maxElements: 12,
     signal,

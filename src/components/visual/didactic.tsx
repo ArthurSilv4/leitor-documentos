@@ -134,19 +134,27 @@ export function Concept({
   const rows = [
     { Icon: Target, label: 'Para que serve', text: purpose },
     { Icon: FileText, label: 'Exemplo', text: example },
-    { Icon: Lightbulb, label: 'Pense assim', text: analogy },
   ].filter((r) => r.text)
 
   return (
     <VisualFrame>
-      <p className="text-muted-foreground text-xs font-medium">Conceito</p>
+      <p className="text-muted-foreground text-xs font-medium">O que é</p>
       <h3 className="mt-0.5 font-serif text-xl">{term}</h3>
       <p className="mt-1.5 text-sm leading-relaxed">{definition}</p>
+      {analogy && (
+        <div className="bg-primary/10 mt-3 flex gap-2.5 rounded-lg p-3">
+          <Lightbulb className="text-primary mt-0.5 size-5 shrink-0" aria-hidden />
+          <p className="text-sm leading-relaxed">
+            <span className="font-semibold">É como… </span>
+            {analogy}
+          </p>
+        </div>
+      )}
       {rows.length > 0 && (
-        <div className="mt-3 space-y-2.5 border-t pt-3">
+        <div className="mt-3 space-y-2.5">
           {rows.map(({ Icon, label, text }) => (
             <div key={label} className="flex gap-2.5">
-              <Icon className="text-primary mt-0.5 size-4 shrink-0" aria-hidden />
+              <Icon className="text-muted-foreground mt-0.5 size-4 shrink-0" aria-hidden />
               <div className="min-w-0 text-sm">
                 <span className="font-medium">{label}: </span>
                 <span className="text-muted-foreground">{text}</span>

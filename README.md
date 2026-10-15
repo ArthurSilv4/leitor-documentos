@@ -1,6 +1,6 @@
 # Leitor de Documentos
 
-Chat no estilo do Claude para conversar com documentos. Você anexa arquivos (PDF, DOCX, TXT, MD, CSV, JSON), faz perguntas, e cada resposta vem com um painel visual didático montado com [json-render](https://json-render.dev): diagramas de fluxo e de sequência, matriz de permissões, conceitos, comparações, glossário, mapa de funcionalidades, etapas, além de métricas e gráficos quando há números.
+Chat no estilo do Claude para conversar com documentos. Você anexa arquivos (PDF, DOCX, TXT, MD, CSV, JSON), faz perguntas e recebe uma explicação em linguagem simples. O texto usa markdown, tabelas e fluxogramas Mermaid; quando ajuda, ganha também explicadores interativos montados com [json-render](https://json-render.dev): jornada guiada de um processo, guia "E se…?", quem faz o quê por perfil, o que acontece quando alguém faz uma ação, regra com exemplos do que pode e não pode, mapa de tela, conceito com analogia, comparação, teste rápido de entendimento, além de números e gráficos.
 
 ## Como funciona
 
@@ -51,7 +51,8 @@ A rota `POST /api/chat` existe só no servidor de desenvolvimento do Vite (`vite
 - `src/lib/browser-chat.ts`: adaptadores do Claude para a versão artifact
 - `src/hooks/use-chat.ts`: estado do chat e conversas salvas
 - `src/components/chat/`: interface do chat
-- `src/components/visual/`: blocos visuais (gráficos com Recharts, diagramas com Mermaid)
+- `src/components/visual/explainers.tsx`: explicadores interativos (jornada, guia "E se…?", perfis, causa e efeito, regras, mapa de tela, teste)
+- `src/components/visual/`: demais blocos (gráficos com Recharts, diagramas com Mermaid)
 
 ## Stack
 

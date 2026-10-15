@@ -5,6 +5,15 @@ import { KeyPoints, Metric, Quote, Steps, Timeline } from '@/components/visual/b
 import { BarChart, LineChart } from '@/components/visual/charts'
 import { Flow, Sequence } from '@/components/visual/diagrams'
 import { Comparison, Concept, FeatureMap, Glossary, PermissionMatrix } from '@/components/visual/didactic'
+import {
+  ActionEffect,
+  DecisionGuide,
+  Journey,
+  Quiz,
+  RoleExplorer,
+  RuleExamples,
+  ScreenMap,
+} from '@/components/visual/explainers'
 import { VisualFrame } from '@/components/visual/frame'
 import { catalog } from '@/lib/visual-catalog'
 
@@ -40,5 +49,12 @@ export const { registry } = defineRegistry(catalog, {
     Comparison: ({ props }) => <Comparison {...props} />,
     Concept: ({ props }) => <Concept {...props} />,
     FeatureMap: ({ props }) => <FeatureMap {...props} />,
+    Journey: ({ props }) => <Journey {...props} />,
+    DecisionGuide: ({ props }) => <DecisionGuide {...props} />,
+    RoleExplorer: ({ props }) => <RoleExplorer {...props} />,
+    ActionEffect: ({ props }) => <ActionEffect {...props} />,
+    RuleExamples: ({ props }) => <RuleExamples {...props} />,
+    ScreenMap: ({ props }) => <ScreenMap {...props} />,
+    Quiz: ({ props }) => <Quiz {...props} />,
   },
 })

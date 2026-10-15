@@ -197,6 +197,136 @@ export const visualComponents = {
     }),
     description: 'Mapa da estrutura de um sistema ou documento: grupos (módulos, áreas) e o que cada um contém',
   },
+
+  // Explicadores: vão além do que texto, tabela ou diagrama já mostram
+  Journey: {
+    props: z
+      .object({
+        title: z.string(),
+        description: z.string().nullable(),
+        steps: z
+          .array(z.object({ id: z.string(), title: z.string(), who: z.string().nullable(), detail: z.string().nullable() }))
+          .min(2)
+          .max(8),
+        detours: z
+          .array(z.object({ from: z.string(), label: z.string(), result: z.string() }))
+          .max(10)
+          .nullable(),
+      })
+      .refine((j) => {
+        const ids = new Set(j.steps.map((s) => s.id))
+        return (j.detours ?? []).every((d) => ids.has(d.from))
+      }, 'Desvio aponta para etapa inexistente'),
+    description:
+      'Jornada guiada de um processo: o caminho principal em etapas clicáveis (quem faz e o que acontece) e os desvios "E se…?" que saem de cada etapa. Use para processos e ciclos de status',
+  },
+  DecisionGuide: {
+    props: z
+      .object({
+        title: z.string(),
+        start: z.string(),
+        nodes: z
+          .array(
+            z.object({
+              id: z.string(),
+              question: z.string().nullable(),
+              options: z.array(z.object({ label: z.string(), next: z.string() })).min(2).max(4).nullable(),
+              answer: z.string().nullable(),
+              tone: z.enum(['ok', 'attention', 'blocked']).nullable(),
+            }),
+          )
+          .min(3)
+          .max(12),
+      })
+      .refine((g) => {
+        const ids = new Set(g.nodes.map((n) => n.id))
+        return (
+          ids.has(g.start) &&
+          g.nodes.every((n) =>
+            n.options ? !!n.question && n.options.every((o) => ids.has(o.next)) : !!n.answer,
+          )
+        )
+      }, 'Guia de decisão com caminhos quebrados'),
+    description:
+      'Guia "E se…?" interativo: a pessoa responde perguntas simples sobre a situação dela e chega à resposta certa. Cada nó tem pergunta com opções (2 a 4) ou uma resposta final (tone: ok, attention ou blocked)',
+  },
+  RoleExplorer: {
+    props: z.object({
+      title: z.string(),
+      roles: z
+        .array(
+          z.object({
+            name: z.string(),
+            icon: z.enum(['pessoa', 'autoridade', 'empresa', 'operador', 'externo', 'sistema', 'celular']).nullable(),
+            summary: z.string().nullable(),
+            can: z.array(z.string()).min(1).max(8),
+            cannot: z.array(z.string()).max(6).nullable(),
+          }),
+        )
+        .min(2)
+        .max(6),
+    }),
+    description: 'Quem faz o quê: a pessoa escolhe um perfil e vê, em linguagem simples, o que ele pode e o que não pode fazer',
+  },
+  ActionEffect: {
+    props: z.object({
+      actor: z.string().nullable(),
+      action: z.string(),
+      effects: z
+        .array(z.object({ kind: z.enum(['status', 'aviso', 'registro', 'acesso', 'prazo', 'outro']), text: z.string() }))
+        .min(1)
+        .max(6),
+      note: z.string().nullable(),
+    }),
+    description:
+      'O que acontece quando alguém faz uma ação: mudança de situação, quem é avisado, o que fica registrado, prazos. actor e action formam a frase "Quando <actor> <action>"',
+  },
+  RuleExamples: {
+    props: z.object({
+      rule: z.string(),
+      why: z.string().nullable(),
+      examples: z
+        .array(z.object({ situation: z.string(), allowed: z.boolean(), explanation: z.string().nullable() }))
+        .min(2)
+        .max(5),
+    }),
+    description: 'Uma regra explicada com situações concretas: exemplos do que pode e do que não pode, e por quê',
+  },
+  ScreenMap: {
+    props: z.object({
+      title: z.string(),
+      regions: z
+        .array(
+          z.object({
+            label: z.string(),
+            area: z.enum(['topo', 'esquerda', 'centro', 'direita', 'rodape']),
+            description: z.string(),
+          }),
+        )
+        .min(2)
+        .max(8),
+    }),
+    description: 'Mapa de uma tela: um esboço simples com as áreas numeradas e o que cada uma faz. Use quando o documento descreve telas',
+  },
+  Quiz: {
+    props: z
+      .object({
+        title: z.string().nullable(),
+        questions: z
+          .array(
+            z.object({
+              question: z.string(),
+              options: z.array(z.string()).min(2).max(4),
+              correct: z.number().int().min(0),
+              explanation: z.string(),
+            }),
+          )
+          .min(1)
+          .max(3),
+      })
+      .refine((q) => q.questions.every((x) => x.correct < x.options.length), 'Resposta certa fora das opções'),
+    description: 'Teste rápido de entendimento: 1 a 3 perguntas de múltipla escolha com a explicação de cada resposta',
+  },
 }
 
 export const catalog = defineCatalog(schema, {
@@ -205,25 +335,22 @@ export const catalog = defineCatalog(schema, {
 })
 
 // Componentes que o extrator pode preencher com conteúdo dos documentos.
-// Stack e Grid são estruturas de layout adicionadas pelo servidor.
+// Fluxogramas, listas, tabelas e glossários ficam no texto (markdown e
+// Mermaid); os antigos continuam no catálogo para conversas já salvas.
 export const contentComponents = [
-  'Flow',
-  'Sequence',
-  'PermissionMatrix',
+  'Journey',
+  'DecisionGuide',
+  'RoleExplorer',
+  'ActionEffect',
+  'RuleExamples',
+  'ScreenMap',
   'Concept',
   'Comparison',
-  'FeatureMap',
-  'Glossary',
+  'Quiz',
   'Metric',
   'BarChart',
   'LineChart',
   'Timeline',
-  'KeyPoints',
-  'Steps',
-  'Table',
-  'Alert',
-  'Accordion',
-  'Quote',
 ] as const satisfies readonly (keyof typeof visualComponents)[]
 
 export type ContentComponent = (typeof contentComponents)[number]

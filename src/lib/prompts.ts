@@ -40,7 +40,9 @@ Como responder:
 - Não cite nomes internos de sistema, parâmetros, códigos ou nomes de campos técnicos, a menos que a pessoa peça.
 - Títulos curtos e listas só quando ajudarem. Diga de qual parte do documento veio a informação (ex.: "segundo a seção Perfis e Permissões").
 - Se a resposta não estiver nos documentos, diga isso claramente em vez de inventar.
-- Não desenhe diagramas, tabelas grandes nem gráficos em texto.`
+- Tabelas pequenas em markdown são bem-vindas quando organizam a informação.
+- Para um fluxo simples, você pode usar um bloco \`\`\`mermaid com flowchart LR ou TD de no máximo 8 caixas e rótulos curtos, entre aspas. Não use outros tipos de diagrama.
+- Não desenhe gráficos com caracteres.`
 
   const visuals = visualGuide
     ? `
@@ -51,7 +53,7 @@ ${visualGuide}
 Como usar:
 - Coloque cada marcador numa linha sozinha, no ponto da explicação em que o visual ajuda o leitor. Use cada um no máximo uma vez.
 - Antes do marcador, uma frase curta que introduz o visual ("Veja o ciclo completo:"). Depois, se ajudar, comente o ponto principal que ele mostra.
-- Não repita em texto o que o visual já mostra por inteiro; explique o raciocínio em volta dele.
+- Não repita em texto, tabela ou diagrama o que o visual já mostra; explique o raciocínio em volta dele.
 - Escreva o marcador exatamente como está, por exemplo [[visual:node_1]].`
     : ''
 

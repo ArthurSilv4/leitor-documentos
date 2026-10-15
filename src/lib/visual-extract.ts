@@ -20,30 +20,33 @@ function componentGuide(): string {
 }
 
 export function extractionInstructions(hasDocuments: boolean): string {
-  return `Você prepara blocos visuais e didáticos que ajudam a pessoa a entender a resposta para a pergunta dela.
-Pense como um professor: o objetivo é explicar visualmente, não só mostrar números.
+  return `Você prepara explicadores visuais para pessoas que NÃO são da área técnica entenderem a resposta à pergunta delas.
 Leia ${hasDocuments ? 'os documentos e ' : ''}a conversa e extraia de 0 a ${MAX_BLOCKS} blocos usando os componentes abaixo.
-Outro modelo vai escolher quais blocos mostrar e em que ordem, então cada bloco precisa fazer sentido sozinho.
+Outro modelo vai escolher quais blocos usar, então cada bloco precisa fazer sentido sozinho.
 
-Escolha o componente pelo tipo de informação:
-- status, ciclo de vida, fluxo de processo ou caminhos de decisão → Flow (use rótulos nas setas com a ação e quem faz)
-- troca entre vários atores ou sistemas, em ordem (quem pede, quem aprova, quem é avisado) → Sequence
-- o que cada perfil pode ou não fazer → PermissionMatrix
-- um conceito central que a pessoa precisa entender → Concept (com exemplo e analogia simples)
-- duas ou três alternativas, modos ou perfis → Comparison
-- visão geral de módulos, telas ou seções → FeatureMap
-- termos técnicos e siglas → Glossary
-- procedimento passo a passo → Steps
-- regras, restrições e avisos importantes → Alert ou KeyPoints
+O texto da resposta já cobre listas, tabelas e fluxogramas simples. Os blocos existem para ir ALÉM do texto:
+deixar a pessoa explorar, simular a própria situação, ver causa e efeito e conferir se entendeu.
+Não crie um bloco que seria só uma lista ou uma tabela.
+
+Escolha o componente pelo que ajuda a entender:
+- um processo ou ciclo de situações (status) → Journey: o caminho principal em etapas, com os desvios "E se…?" de cada etapa
+- dúvidas do tipo "posso…?", "o que faço se…?", em que a resposta depende da situação → DecisionGuide
+- perfis ou papéis de pessoas → RoleExplorer (o que cada um pode e não pode, em frases simples)
+- consequências de uma ação (muda a situação, quem é avisado, o que fica registrado, prazos) → ActionEffect
+- uma regra com condições ou limites → RuleExamples, com situações concretas do dia a dia que pode e que não pode
+- descrição de uma tela do sistema → ScreenMap
+- um conceito central → Concept, sempre com uma analogia do cotidiano
+- duas ou três alternativas → Comparison
+- quando a explicação é longa ou cheia de regras → um Quiz curto (no máximo um, 2 ou 3 perguntas)
 - números comparáveis → Metric, BarChart ou LineChart; datas → Timeline
 
 Regras:
-- Use apenas informações ${hasDocuments ? 'presentes nos documentos' : 'amplamente conhecidas e estáveis'}. Nunca invente números, datas, regras, perfis ou citações.
-- Prefira variedade e foque no que responde à pergunta. Diagramas com no máximo 16 nós: agrupe ou simplifique, sem perder o essencial.
-- Quem vai ver NÃO é da área técnica. Textos curtos, em português do Brasil, com palavras do dia a dia. Rótulos de diagrama com poucas palavras.
-- Não use nomes internos de sistema, parâmetros, códigos ou nomes de campos técnicos. Explique siglas no Glossary.
-- Em Concept, a analogia deve vir do cotidiano (ex.: comparar com algo do dia a dia de qualquer pessoa).
-- Se a pergunta é simples, uma saudação ou não tem nada que valha a pena visualizar, retorne "blocks": [].
+- Use apenas informações ${hasDocuments ? 'presentes nos documentos' : 'amplamente conhecidas e estáveis'}. Nunca invente números, datas, regras, perfis ou exemplos que contradigam o documento.
+- Exemplos de RuleExamples e opções de DecisionGuide devem ser situações reais e concretas ("Agendar para amanhã às 10h"), não abstrações.
+- Quem vai ver NÃO é da área técnica: palavras do dia a dia, frases curtas, português do Brasil.
+- Não use nomes internos de sistema, parâmetros, códigos ou nomes de campos técnicos. Siglas, só se explicadas.
+- Foque no que responde à pergunta. Menos blocos bons valem mais que muitos blocos.
+- Se a pergunta é simples, uma saudação ou não há nada que um explicador acrescente, retorne "blocks": [].
 - Campos que aceitam null devem ser enviados como null quando não houver valor.
 
 Responda somente com JSON neste formato:

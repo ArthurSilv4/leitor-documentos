@@ -75,7 +75,7 @@ export function ChatMessage({
         (inlineSpec ? (
           <AnswerWithVisuals content={message.content} spec={inlineSpec} isStreaming={isStreaming} />
         ) : (
-          <Markdown>{message.content}</Markdown>
+          <Markdown isStreaming={isStreaming}>{message.content}</Markdown>
         ))
       )}
 

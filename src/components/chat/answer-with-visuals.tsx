@@ -29,7 +29,7 @@ export function AnswerWithVisuals({
   const parts = splitAnswer(content)
 
   const rendered = parts.map((part, i) => {
-    if (part.type === 'text') return <Markdown key={i}>{part.text}</Markdown>
+    if (part.type === 'text') return <Markdown key={i} isStreaming={isStreaming}>{part.text}</Markdown>
     // Só visuais de primeiro nível, cada um uma vez
     if (!units.includes(part.id) || placed.has(part.id)) return null
     placed.add(part.id)
