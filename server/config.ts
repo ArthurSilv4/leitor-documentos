@@ -15,11 +15,13 @@ export function readConfig(env: Record<string, string | undefined>): ServerConfi
   if (!openRouterApiKey) return null
 
   const chatModel = env.OPENROUTER_MODEL?.trim() || 'anthropic/claude-sonnet-4.5'
+  const aiGatewayApiKey = env.AI_GATEWAY_API_KEY?.trim() || null
   return {
     openRouterApiKey,
     chatModel,
     extractModel: env.OPENROUTER_EXTRACT_MODEL?.trim() || chatModel,
-    jevModel: env.JEV_MODEL?.trim() || 'typesafe-ai/jev',
-    aiGatewayApiKey: env.AI_GATEWAY_API_KEY?.trim() || null,
+    // O Jev tem IDs diferentes em cada provedor
+    jevModel: env.JEV_MODEL?.trim() || (aiGatewayApiKey ? 'typesafe-ai/jev' : 'typesafe/jev-1.14'),
+    aiGatewayApiKey,
   }
 }

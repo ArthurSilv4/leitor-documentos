@@ -9,7 +9,7 @@ Para cada pergunta, duas tarefas rodam em paralelo:
 1. **Resposta em texto**: um modelo da OpenRouter responde em streaming, com base nos documentos.
 2. **Painel visual**:
    - outro modelo lê os documentos e extrai até 8 blocos visuais com dados reais (validados contra os schemas do catálogo);
-   - o **Jev** (`typesafe-ai/jev`), um modelo de decisão, escolhe quais blocos respondem à pergunta e como organizá-los (`experimental_composeSpec` do json-render);
+   - o **Jev**, modelo de decisão da TypeSafe (`typesafe/jev-1.14` na OpenRouter), escolhe quais blocos respondem à pergunta e como organizá-los (`experimental_composeSpec` do json-render);
    - o json-render renderiza o painel com componentes shadcn/ui.
 
 O texto dos documentos é extraído no navegador (pdf.js e mammoth).
@@ -29,7 +29,7 @@ Abra http://localhost:5173.
 | `OPENROUTER_API_KEY` | Chave da OpenRouter (obrigatória) | — |
 | `OPENROUTER_MODEL` | Modelo que responde no chat | `anthropic/claude-sonnet-4.5` |
 | `OPENROUTER_EXTRACT_MODEL` | Modelo que extrai os blocos visuais | o mesmo do chat |
-| `JEV_MODEL` | Modelo de decisão que compõe o painel | `typesafe-ai/jev` |
+| `JEV_MODEL` | Modelo de decisão que compõe o painel | `typesafe/jev-1.14` (OpenRouter) ou `typesafe-ai/jev` (Vercel AI Gateway) |
 | `AI_GATEWAY_API_KEY` | Opcional: roda o Jev pelo Vercel AI Gateway em vez da OpenRouter | — |
 
 A rota `POST /api/chat` existe só no servidor de desenvolvimento do Vite (`vite.config.ts`). Para produção, use a lógica de `server/chat.ts` num backend ou função serverless.
