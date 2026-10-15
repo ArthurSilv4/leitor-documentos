@@ -1,6 +1,6 @@
 # Leitor de Documentos
 
-Chat no estilo do Claude para conversar com documentos. Você anexa arquivos (PDF, DOCX, TXT, MD, CSV, JSON), faz perguntas, e cada resposta vem com um painel visual (métricas, gráficos, linha do tempo, etapas, tabelas) montado com [json-render](https://json-render.dev).
+Chat no estilo do Claude para conversar com documentos. Você anexa arquivos (PDF, DOCX, TXT, MD, CSV, JSON), faz perguntas, e cada resposta vem com um painel visual didático montado com [json-render](https://json-render.dev): diagramas de fluxo e de sequência, matriz de permissões, conceitos, comparações, glossário, mapa de funcionalidades, etapas, além de métricas e gráficos quando há números.
 
 ## Como funciona
 
@@ -48,8 +48,8 @@ A rota `POST /api/chat` existe só no servidor de desenvolvimento do Vite (`vite
 - `src/lib/browser-chat.ts`: o mesmo fluxo no navegador, para a versão artifact
 - `src/hooks/use-chat.ts`: estado do chat e conversas salvas
 - `src/components/chat/`: interface do chat
-- `src/components/visual/`: blocos visuais (gráficos com Recharts)
+- `src/components/visual/`: blocos visuais (gráficos com Recharts, diagramas com Mermaid)
 
 ## Stack
 
-React 19, Vite, TypeScript, Tailwind CSS v4, shadcn/ui, json-render, OpenRouter SDK, Recharts.
+React 19, Vite, TypeScript, Tailwind CSS v4, shadcn/ui, json-render, OpenRouter SDK, Recharts, Mermaid.

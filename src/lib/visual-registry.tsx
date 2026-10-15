@@ -3,6 +3,8 @@ import { shadcnComponents } from '@json-render/shadcn'
 
 import { KeyPoints, Metric, Quote, Steps, Timeline } from '@/components/visual/blocks'
 import { BarChart, LineChart } from '@/components/visual/charts'
+import { Flow, Sequence } from '@/components/visual/diagrams'
+import { Comparison, Concept, FeatureMap, Glossary, PermissionMatrix } from '@/components/visual/didactic'
 import { VisualFrame } from '@/components/visual/frame'
 import { catalog } from '@/lib/visual-catalog'
 
@@ -31,5 +33,12 @@ export const { registry } = defineRegistry(catalog, {
     KeyPoints: ({ props }) => <KeyPoints {...props} />,
     Steps: ({ props }) => <Steps {...props} />,
     Quote: ({ props }) => <Quote {...props} />,
+    Flow: ({ props }) => <Flow {...props} />,
+    Sequence: ({ props }) => <Sequence {...props} />,
+    PermissionMatrix: ({ props }) => <PermissionMatrix {...props} />,
+    Glossary: ({ props }) => <Glossary {...props} />,
+    Comparison: ({ props }) => <Comparison {...props} />,
+    Concept: ({ props }) => <Concept {...props} />,
+    FeatureMap: ({ props }) => <FeatureMap {...props} />,
   },
 })
