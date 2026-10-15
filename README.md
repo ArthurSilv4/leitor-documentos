@@ -14,6 +14,8 @@ O público é não técnico: as respostas usam linguagem do dia a dia e explicam
 
 No campo de mensagem, o botão de modo alterna entre **Desenhos: automático** (o Jev decide), **sempre** e **nunca**. Respostas sem desenhos ganham o botão **Explicar com desenhos**, que gera os visuais sob demanda.
 
+A galeria **Componentes visuais** (link na barra lateral, ou o endereço com `#galeria`) mostra todos os componentes funcionando, com exemplos do documento do iCONFERE.
+
 O texto dos documentos é extraído no navegador (pdf.js e mammoth).
 
 ## Rodando
@@ -49,6 +51,7 @@ A rota `POST /api/chat` existe só no servidor de desenvolvimento do Vite (`vite
 - `src/lib/visual-catalog.ts`: componentes que o painel pode usar (schemas Zod)
 - `src/lib/visual-extract.ts`: prompt de extração e validação dos blocos
 - `src/lib/browser-chat.ts`: adaptadores do Claude para a versão artifact
+- `src/lib/gallery-samples.ts` e `src/components/gallery.tsx`: galeria de componentes com exemplos
 - `src/hooks/use-chat.ts`: estado do chat e conversas salvas
 - `src/components/chat/`: interface do chat
 - `src/components/visual/explainers.tsx`: explicadores interativos (jornada, guia "E se…?", perfis, causa e efeito, regras, mapa de tela, teste)

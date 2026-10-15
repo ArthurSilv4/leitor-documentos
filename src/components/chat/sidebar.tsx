@@ -1,4 +1,4 @@
-import { FileText, MessageSquare, Plus, Trash2 } from 'lucide-react'
+import { FileText, LayoutGrid, MessageSquare, Plus, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import type { Conversation } from '@/lib/chat-types'
@@ -10,12 +10,14 @@ export function Sidebar({
   onNew,
   onSelect,
   onRemove,
+  onOpenGallery,
 }: {
   conversations: Conversation[]
   activeId: string | null
   onNew: () => void
   onSelect: (id: string) => void
   onRemove: (id: string) => void
+  onOpenGallery: () => void
 }) {
   return (
     <aside className="bg-sidebar text-sidebar-foreground flex h-full w-64 flex-col border-r">
@@ -64,6 +66,11 @@ export function Sidebar({
           <p className="text-muted-foreground px-2.5 py-2 text-sm">Nenhuma conversa ainda.</p>
         )}
       </nav>
+      <div className="border-t p-3">
+        <Button variant="ghost" className="text-muted-foreground w-full justify-start" onClick={onOpenGallery}>
+          <LayoutGrid /> Componentes visuais
+        </Button>
+      </div>
     </aside>
   )
 }

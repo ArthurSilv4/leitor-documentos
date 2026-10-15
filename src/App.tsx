@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { FileText, Menu } from 'lucide-react'
 
 import { Composer } from '@/components/chat/composer'
+import { Gallery } from '@/components/gallery'
 import { ChatMessage } from '@/components/chat/message'
 import { Sidebar } from '@/components/chat/sidebar'
 import { Button } from '@/components/ui/button'
@@ -22,8 +23,24 @@ function greeting() {
   return 'Boa noite'
 }
 
+// A galeria abre pelo endereço com #galeria (funciona também no artifact).
+function useGalleryRoute() {
+  const [open, setOpen] = useState(() => window.location.hash === '#galeria')
+  useEffect(() => {
+    const onHash = () => setOpen(window.location.hash === '#galeria')
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+  const set = (value: boolean) => {
+    window.location.hash = value ? 'galeria' : ''
+    setOpen(value)
+  }
+  return [open, set] as const
+}
+
 function App() {
   const chat = useChat()
+  const [galleryOpen, setGalleryOpen] = useGalleryRoute()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const messages = chat.active?.messages ?? []
@@ -39,13 +56,19 @@ function App() {
       activeId={chat.active?.id ?? null}
       onNew={() => {
         chat.newChat()
+        setGalleryOpen(false)
         setSidebarOpen(false)
       }}
       onSelect={(id) => {
         chat.select(id)
+        setGalleryOpen(false)
         setSidebarOpen(false)
       }}
       onRemove={chat.remove}
+      onOpenGallery={() => {
+        setGalleryOpen(true)
+        setSidebarOpen(false)
+      }}
     />
   )
 
@@ -80,7 +103,9 @@ function App() {
           )}
         </header>
 
-        {messages.length === 0 ? (
+        {galleryOpen ? (
+          <Gallery onClose={() => setGalleryOpen(false)} />
+        ) : messages.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center px-4 pb-24">
             <h2 className="mb-2 text-center font-serif text-3xl sm:text-4xl">{greeting()}!</h2>
             <p className="text-muted-foreground mb-8 text-center text-sm">
