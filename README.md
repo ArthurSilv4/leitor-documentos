@@ -4,15 +4,13 @@ Chat no estilo do Claude para conversar com documentos. Você anexa arquivos (PD
 
 ## Como funciona
 
-Para cada pergunta, duas tarefas rodam em paralelo:
+Para cada pergunta:
 
-1. **Resposta em texto**: um modelo da OpenRouter responde em streaming, com base nos documentos.
-2. **Painel visual**, só quando ajuda:
-   - o **Jev** primeiro classifica se a pergunta pede um visual (fluxos, papéis, comparações, números) ou se texto basta (pergunta pontual, definição curta, conversa). Na dúvida, fica só no texto;
-   - se pedir, outro modelo lê os documentos e extrai até 8 blocos visuais com dados reais (validados contra os schemas do catálogo);
-      - o json-render renderiza o painel com componentes shadcn/ui.
+1. O **Jev** (`typesafe/jev-1.14` na OpenRouter) classifica se a pergunta pede visuais (fluxos, papéis, comparações, números) ou se texto basta (pergunta pontual, definição curta, conversa). Na dúvida, fica só no texto e a resposta começa na hora.
+2. Se pedir, um modelo da OpenRouter lê os documentos e extrai até 8 blocos visuais com dados reais (validados contra os schemas do catálogo), e o Jev escolhe quais respondem à pergunta e como agrupá-los (`experimental_composeSpec` do json-render).
+3. A resposta em texto é gerada em streaming já sabendo quais visuais existem e posiciona cada um no ponto da explicação em que ele ajuda (marcadores `[[visual:id]]`). O json-render desenha cada visual ali, com componentes shadcn/ui; o que o texto não posicionar aparece no fim.
 
-No campo de mensagem, o botão de modo alterna entre **Visual automático** (o Jev decide), **Sempre visual** e **Só texto**. Respostas sem painel ganham o botão **Mostrar visualmente**, que gera o painel sob demanda.
+No campo de mensagem, o botão de modo alterna entre **Visual automático** (o Jev decide), **Sempre visual** e **Só texto**. Respostas sem visuais ganham o botão **Mostrar visualmente**, que gera um painel sob demanda.
 
 O texto dos documentos é extraído no navegador (pdf.js e mammoth).
 
