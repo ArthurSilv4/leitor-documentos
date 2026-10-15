@@ -84,13 +84,13 @@ export async function* runChatInBrowser(
   yield* runChat(
     body,
     {
-      async streamAnswer(emitDelta) {
+      async streamAnswer(emitDelta, visualGuide) {
         // O sample não tem prompt de sistema: as instruções vão no primeiro turno.
         const [first, ...rest] = body.messages
         const turns: SampleMessage[] = [
           {
             role: 'user',
-            content: `${answerSystemPrompt(body.documents, MAX_DOCUMENT_CHARS)}\n\n---\n\n${first.content}`,
+            content: `${answerSystemPrompt(body.documents, MAX_DOCUMENT_CHARS, visualGuide)}\n\n---\n\n${first.content}`,
           },
           ...rest,
         ]

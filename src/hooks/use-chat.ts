@@ -145,7 +145,7 @@ export function useChat() {
         } else {
           const message = err instanceof Error ? err.message : String(err)
           updateMessage(convId, msgId, (m) =>
-            body.answer === false ? { ...m, visual: { status: 'error', message } } : { ...m, error: message },
+            body.answer === false ? { ...m, visual: { status: 'error', message, placement: 'panel' } } : { ...m, error: message },
           )
         }
       } finally {
@@ -163,7 +163,7 @@ export function useChat() {
       const index = active.messages.findIndex((m) => m.id === msgId)
       if (index < 0) return
       const history = active.messages.slice(0, index + 1)
-      updateMessage(active.id, msgId, (m) => ({ ...m, visual: { status: 'extracting' } }))
+      updateMessage(active.id, msgId, (m) => ({ ...m, visual: { status: 'extracting', placement: 'panel' } }))
       void stream(active.id, msgId, {
         messages: history.filter((m) => m.content.trim()).map((m) => ({ role: m.role, content: m.content })),
         documents: active.documents.map(({ name, text }) => ({ name, text })),

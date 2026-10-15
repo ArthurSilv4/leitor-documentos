@@ -29,6 +29,8 @@ export type ChatEvent =
       stopReason?: string
       elapsedMs?: number
       message?: string
+      /** inline: dentro do texto, pelos marcadores; panel: num bloco depois da resposta */
+      placement?: 'inline' | 'panel'
     }
   | { type: 'spec'; spec: Spec }
   | { type: 'error'; message: string }

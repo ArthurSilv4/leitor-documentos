@@ -15,6 +15,8 @@ export type Visual = {
   evaluator?: string
   elapsedMs?: number
   message?: string
+  /** inline: dentro do texto; panel: bloco depois da resposta (botão ou conversas antigas) */
+  placement?: 'inline' | 'panel'
 }
 
 export type Message = {

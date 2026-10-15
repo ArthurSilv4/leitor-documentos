@@ -1,8 +1,9 @@
-import { AlertCircle, LayoutDashboard } from 'lucide-react'
+import { AlertCircle, LayoutDashboard, Loader2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 
 import type { Message } from '@/lib/chat-types'
+import { AnswerWithVisuals } from './answer-with-visuals'
 import { FileChip } from './file-chip'
 import { Markdown } from './markdown'
 import { VisualPanel } from './visual-panel'
@@ -34,10 +35,28 @@ export function ChatMessage({
     )
   }
 
-  const thinking = isStreaming && !message.content && !message.error
+  const visual = message.visual
+  const working = visual && ['deciding', 'extracting', 'composing'].includes(visual.status)
+  // Visuais dentro do texto; o painel separado fica para o botão "Mostrar
+  // visualmente" e para conversas salvas antes desta mudança.
+  const inlineSpec = visual?.placement === 'inline' && visual.spec?.root ? visual.spec : null
+  const asPanel = visual && (visual.placement === 'panel' || (!visual.placement && visual.status === 'done'))
+
+  const preparing =
+    isStreaming && !message.content && working && visual.placement !== 'panel' && visual.status !== 'deciding'
+  const thinking = isStreaming && !message.content && !message.error && !preparing
 
   return (
     <div>
+      {preparing && (
+        <p className="text-muted-foreground flex items-center gap-2 py-2 text-sm">
+          <Loader2 className="size-4 animate-spin" />
+          {visual.status === 'extracting'
+            ? 'Lendo o documento para preparar os visuais…'
+            : `Escolhendo os visuais que ajudam a explicar…`}
+        </p>
+      )}
+
       {thinking ? (
         <div className="flex items-center gap-1.5 py-2" aria-label="Pensando">
           {[0, 150, 300].map((delay) => (
@@ -49,7 +68,20 @@ export function ChatMessage({
           ))}
         </div>
       ) : (
-        message.content && <Markdown>{message.content}</Markdown>
+        message.content &&
+        (inlineSpec ? (
+          <AnswerWithVisuals content={message.content} spec={inlineSpec} isStreaming={isStreaming} />
+        ) : (
+          <Markdown>{message.content}</Markdown>
+        ))
+      )}
+
+      {inlineSpec && !isStreaming && (
+        <p className="text-muted-foreground mt-4 text-xs">Visuais escolhidos por {visual?.evaluator ?? 'Jev'}</p>
+      )}
+
+      {visual?.status === 'error' && visual.placement !== 'panel' && (
+        <p className="text-muted-foreground mt-3 text-xs">Não foi possível preparar os visuais: {visual.message}</p>
       )}
 
       {message.error && (
@@ -61,7 +93,7 @@ export function ChatMessage({
 
       {message.stopped && <p className="text-muted-foreground mt-2 text-xs">Resposta interrompida.</p>}
 
-      {message.visual && <VisualPanel visual={message.visual} isStreaming={isStreaming} />}
+      {asPanel && <VisualPanel visual={visual} isStreaming={isStreaming} />}
 
       {onVisualize && !isStreaming && message.content && (!message.visual || message.visual.status === 'skipped') && (
         <Button variant="ghost" size="sm" className="text-muted-foreground mt-2 -ml-2 h-8 text-xs" onClick={onVisualize}>

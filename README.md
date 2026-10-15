@@ -10,8 +10,7 @@ Para cada pergunta, duas tarefas rodam em paralelo:
 2. **Painel visual**, só quando ajuda:
    - o **Jev** primeiro classifica se a pergunta pede um visual (fluxos, papéis, comparações, números) ou se texto basta (pergunta pontual, definição curta, conversa). Na dúvida, fica só no texto;
    - se pedir, outro modelo lê os documentos e extrai até 8 blocos visuais com dados reais (validados contra os schemas do catálogo);
-   - o **Jev**, modelo de decisão da TypeSafe (`typesafe/jev-1.14` na OpenRouter), escolhe quais blocos respondem à pergunta e como organizá-los (`experimental_composeSpec` do json-render);
-   - o json-render renderiza o painel com componentes shadcn/ui.
+      - o json-render renderiza o painel com componentes shadcn/ui.
 
 No campo de mensagem, o botão de modo alterna entre **Visual automático** (o Jev decide), **Sempre visual** e **Só texto**. Respostas sem painel ganham o botão **Mostrar visualmente**, que gera o painel sob demanda.
 

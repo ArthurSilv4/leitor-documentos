@@ -23,13 +23,13 @@ export function handleChat(
   return runChat(
     body,
     {
-      async streamAnswer(emitDelta) {
+      async streamAnswer(emitDelta, visualGuide) {
         const stream = await client.chat.send(
           {
             chatRequest: {
               model: config.chatModel,
               stream: true,
-              messages: [{ role: 'system', content: answerSystemPrompt(body.documents) }, ...body.messages],
+              messages: [{ role: 'system', content: answerSystemPrompt(body.documents, undefined, visualGuide) }, ...body.messages],
             },
           },
           { signal },

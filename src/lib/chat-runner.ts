@@ -2,6 +2,7 @@ import {
   experimental_composeSpec,
   type Experimental_CompositionCandidate,
   type Experimental_CompositionEvaluator,
+  type Spec,
 } from '@json-render/core'
 
 import type { ChatEvent, ChatRequestBody } from './chat-protocol.ts'
@@ -11,8 +12,8 @@ import { layoutCandidates } from './visual-extract.ts'
 // Fluxo de uma pergunta, igual no servidor (OpenRouter + Jev) e na versão
 // artifact (Claude). Cada lado só fornece os adaptadores de modelo.
 export type ChatAdapters = {
-  /** Resposta em texto, em streaming */
-  streamAnswer: (emitDelta: (delta: string) => void) => Promise<void>
+  /** Resposta em texto, em streaming; visualGuide lista os visuais a posicionar */
+  streamAnswer: (emitDelta: (delta: string) => void, visualGuide: string | null) => Promise<void>
   /** Blocos visuais extraídos dos documentos */
   extract: () => Promise<Experimental_CompositionCandidate[]>
   /** Modelo de decisão (Jev ou substituto) */
@@ -46,9 +47,29 @@ export function visualGateQuestions(body: ChatRequestBody) {
   }
 }
 
-async function composeVisual(body: ChatRequestBody, adapters: ChatAdapters, signal: AbortSignal, emit: (e: ChatEvent) => void) {
+type PreparedVisual = { spec: Spec; guide: string }
+
+// Lista os visuais de primeiro nível (os filhos da raiz) para o texto posicionar.
+function visualGuide(spec: Spec, descriptions: Map<string, string>): string {
+  const describe = (id: string): string => {
+    const element = spec.elements[id]
+    const known = descriptions.get(`${element.type}:${JSON.stringify(element.props)}`)
+    if (known) return known
+    const children = element.children ?? []
+    return children.length ? `Grade com: ${children.map(describe).join('; ')}` : element.type
+  }
+  return (spec.elements[spec.root]?.children ?? []).map((id) => `[[visual:${id}]] ${describe(id)}`).join('\n')
+}
+
+async function prepareVisual(
+  body: ChatRequestBody,
+  adapters: ChatAdapters,
+  signal: AbortSignal,
+  emit: (e: ChatEvent) => void,
+): Promise<PreparedVisual | null> {
   const mode = body.visual ?? 'auto'
-  if (mode === 'never') return
+  if (mode === 'never') return null
+  const placement = body.answer === false ? 'panel' : 'inline'
 
   if (mode === 'auto') {
     emit({ type: 'visual', status: 'deciding' })
@@ -56,7 +77,7 @@ async function composeVisual(body: ChatRequestBody, adapters: ChatAdapters, sign
     const { answers } = await adapters.evaluate({ state, questions, signal })
     if (answers.visual?.choice !== 'visual') {
       emit({ type: 'visual', status: 'skipped' })
-      return
+      return null
     }
   }
 
@@ -64,7 +85,7 @@ async function composeVisual(body: ChatRequestBody, adapters: ChatAdapters, sign
   const content = await adapters.extract()
   if (!content.length) {
     emit({ type: 'visual', status: 'skipped' })
-    return
+    return null
   }
 
   emit({ type: 'visual', status: 'composing', evaluator: adapters.evaluatorLabel, candidates: content.length })
@@ -76,7 +97,7 @@ async function composeVisual(body: ChatRequestBody, adapters: ChatAdapters, sign
     prompt: question,
     evaluate: adapters.evaluate,
     context: {
-      objetivo: 'Painel visual que ajuda a pessoa a entender a resposta à pergunta sobre os documentos',
+      objetivo: 'Visuais que ajudam a pessoa a entender a resposta à pergunta sobre os documentos',
       documentos: body.documents.map((d) => d.name),
     },
     instructions: {
@@ -85,24 +106,31 @@ async function composeVisual(body: ChatRequestBody, adapters: ChatAdapters, sign
     maxElements: 12,
     signal,
   })) {
+    // Inline, o visual só aparece junto com o texto; no painel, mostra a montagem.
     if (event.type === 'step') {
-      emit({ type: 'spec', spec: event.spec })
-    } else if (!event.spec || event.stopReason === 'unavailable') {
-      emit({ type: 'visual', status: 'skipped' })
-    } else {
-      emit({ type: 'spec', spec: event.spec })
-      emit({
-        type: 'visual',
-        status: 'done',
-        evaluator: adapters.evaluatorLabel,
-        stopReason: event.stopReason,
-        elapsedMs: event.elapsedMs,
-      })
+      if (placement === 'panel') emit({ type: 'spec', spec: event.spec })
+      continue
     }
+    if (!event.spec || event.stopReason === 'unavailable') {
+      emit({ type: 'visual', status: 'skipped' })
+      return null
+    }
+    emit({ type: 'spec', spec: event.spec })
+    emit({
+      type: 'visual',
+      status: 'done',
+      evaluator: adapters.evaluatorLabel,
+      stopReason: event.stopReason,
+      elapsedMs: event.elapsedMs,
+      placement,
+    })
+    const descriptions = new Map(content.map((c) => [`${c.element.type}:${JSON.stringify(c.element.props)}`, c.description]))
+    return { spec: event.spec, guide: visualGuide(event.spec, descriptions) }
   }
+  return null
 }
 
-// Fila simples para juntar eventos de tarefas que rodam em paralelo.
+// Fila simples para entregar eventos de callbacks como um stream.
 function createChannel<T>() {
   const buffer: T[] = []
   let wake: (() => void) | null = null
@@ -127,8 +155,8 @@ function createChannel<T>() {
   }
 }
 
-// Resposta em texto e painel visual rodam em paralelo; os eventos dos
-// dois saem intercalados num único stream.
+// Primeiro os visuais (quando ajudam), depois o texto, que os posiciona
+// no meio da explicação. Sem visual, o texto começa logo após a decisão.
 export async function* runChat(
   body: ChatRequestBody,
   adapters: ChatAdapters,
@@ -137,16 +165,20 @@ export async function* runChat(
   const channel = createChannel<ChatEvent>()
   const emit = (event: ChatEvent) => channel.push(event)
 
-  const answer =
-    body.answer === false
-      ? Promise.resolve()
-      : adapters.streamAnswer((delta) => emit({ type: 'text', delta })).catch((err) => {
-          if (!signal.aborted) emit({ type: 'error', message: adapters.errorMessage(err) })
-        })
-  const visual = composeVisual(body, adapters, signal, emit).catch((err) => {
-    if (!signal.aborted) emit({ type: 'visual', status: 'error', message: adapters.errorMessage(err) })
-  })
-  Promise.all([answer, visual]).finally(() => channel.close())
+  const run = async () => {
+    const visual = await prepareVisual(body, adapters, signal, emit).catch((err) => {
+      if (!signal.aborted) emit({ type: 'visual', status: 'error', message: adapters.errorMessage(err) })
+      return null
+    })
+    if (body.answer === false || signal.aborted) return
+
+    await adapters
+      .streamAnswer((delta) => emit({ type: 'text', delta }), visual?.guide ?? null)
+      .catch((err) => {
+        if (!signal.aborted) emit({ type: 'error', message: adapters.errorMessage(err) })
+      })
+  }
+  run().finally(() => channel.close())
 
   yield* channel
   yield { type: 'done' }

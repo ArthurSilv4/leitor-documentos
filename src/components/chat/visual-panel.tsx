@@ -1,8 +1,7 @@
-import { JSONUIProvider, Renderer } from '@json-render/react'
 import { LayoutDashboard, Loader2 } from 'lucide-react'
 
 import type { Visual } from '@/lib/chat-types'
-import { registry } from '@/lib/visual-registry'
+import { VisualBlock } from './visual-block'
 
 const statusText = {
   extracting: 'Procurando dados para visualizar…',
@@ -42,9 +41,7 @@ export function VisualPanel({ visual, isStreaming }: { visual: Visual; isStreami
       </div>
 
       {spec ? (
-        <JSONUIProvider registry={registry} initialState={spec.state ?? {}}>
-          <Renderer spec={spec} registry={registry} loading={working} />
-        </JSONUIProvider>
+        <VisualBlock spec={spec} id={spec.root} loading={working} />
       ) : (
         <div className="space-y-2" aria-hidden>
           <div className="bg-muted h-20 animate-pulse rounded-xl" />
