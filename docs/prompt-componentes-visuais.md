@@ -100,19 +100,13 @@ Monte uma **galeria** acessível no app que mostre todos os componentes funciona
   - tudo funciona no celular.
 - **Chaves e credenciais só no servidor.**
 
-## Controles do usuário
-
-- No campo de mensagem, um botão alterna entre **Desenhos: automático** (o passo de decisão escolhe), **sempre** e **nunca**. A escolha fica lembrada.
-- Respostas sem visuais ganham o botão **Explicar com desenhos**, que gera visuais só para aquela resposta, sem refazer o texto.
-- A tela inicial mostra algumas perguntas de exemplo ("Resuma este documento em linguagem simples", "Quem pode fazer o quê?"). Clicar preenche o campo.
-
 ## Etapas
 
 1. **Componentes e galeria:** todos os componentes funcionando com dados de exemplo, nos modos claro e escuro e no celular.
 2. **Passos no servidor:** decisão, preparação, verificação, seleção e encaixe, em paralelo ao texto. Teste com modelos simulados que:
    - a ordem dos acontecimentos é decisão, preparação com o texto já chegando, visuais prontos e, por fim, encaixe;
    - uma pergunta pontual não dispara a preparação.
-3. **Tela:** visuais aparecendo aos poucos e mudando de lugar, próximas perguntas, controles, mensagens de erro e conversa reaberta igual.
+3. **Tela:** visuais aparecendo aos poucos e mudando de lugar, próximas perguntas, mensagens de erro e conversa reaberta igual.
 4. **Ajuste com perguntas reais:** pelo menos 10 perguntas sobre os nossos documentos, metade pontuais e metade sobre processos e regras. Me mostre:
    - quantas ganharam visuais e quais componentes;
    - o tempo até o primeiro texto e até o primeiro visual;
