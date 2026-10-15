@@ -1,8 +1,9 @@
-import { AlertCircle, LayoutDashboard, Loader2 } from 'lucide-react'
+import { AlertCircle, LayoutDashboard, Loader2, RotateCcw } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 
 import type { Message } from '@/lib/chat-types'
+import { friendlyError } from '@/lib/friendly-error'
 import { AnswerWithVisuals } from './answer-with-visuals'
 import { FileChip } from './file-chip'
 import { Markdown } from './markdown'
@@ -12,11 +13,13 @@ export function ChatMessage({
   message,
   isStreaming,
   onVisualize,
+  onRetry,
 }: {
   message: Message
   isStreaming: boolean
-  /** Ausente enquanto outra resposta está sendo gerada */
+  /** Ausentes enquanto outra resposta está sendo gerada */
   onVisualize?: () => void
+  onRetry?: () => void
 }) {
   if (message.role === 'user') {
     return (
@@ -52,8 +55,8 @@ export function ChatMessage({
         <p className="text-muted-foreground flex items-center gap-2 py-2 text-sm">
           <Loader2 className="size-4 animate-spin" />
           {visual.status === 'extracting'
-            ? 'Lendo o documento para preparar os visuais…'
-            : `Escolhendo os visuais que ajudam a explicar…`}
+            ? 'Lendo o documento para preparar os desenhos…'
+            : 'Escolhendo os desenhos que ajudam a explicar…'}
         </p>
       )}
 
@@ -76,29 +79,50 @@ export function ChatMessage({
         ))
       )}
 
-      {inlineSpec && !isStreaming && (
-        <p className="text-muted-foreground mt-4 text-xs">Visuais escolhidos por {visual?.evaluator ?? 'Jev'}</p>
-      )}
-
       {visual?.status === 'error' && visual.placement !== 'panel' && (
-        <p className="text-muted-foreground mt-3 text-xs">Não foi possível preparar os visuais: {visual.message}</p>
+        <p className="text-muted-foreground mt-3 text-xs">
+          Não consegui preparar os desenhos desta vez; a resposta veio só em texto.
+        </p>
       )}
 
       {message.error && (
-        <div className="border-destructive/40 text-destructive mt-2 flex items-start gap-2 rounded-lg border px-3 py-2 text-sm">
-          <AlertCircle className="mt-0.5 size-4 shrink-0" />
-          <span>{message.error}</span>
+        <div className="border-destructive/40 mt-2 rounded-lg border px-3 py-2.5 text-sm">
+          <p className="text-destructive flex items-start gap-2">
+            <AlertCircle className="mt-0.5 size-4 shrink-0" />
+            <span>{friendlyError(message.error)}</span>
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-3 pl-6">
+            {onRetry && (
+              <Button variant="outline" size="sm" className="h-8" onClick={onRetry}>
+                <RotateCcw className="size-3.5" />
+                Tentar de novo
+              </Button>
+            )}
+            <details className="text-muted-foreground text-xs">
+              <summary className="cursor-pointer">Detalhes para o suporte</summary>
+              <p className="mt-1 break-all">{message.error}</p>
+            </details>
+          </div>
         </div>
       )}
 
-      {message.stopped && <p className="text-muted-foreground mt-2 text-xs">Resposta interrompida.</p>}
+      {message.stopped && (
+        <p className="text-muted-foreground mt-2 flex items-center gap-2 text-xs">
+          Resposta interrompida.
+          {onRetry && (
+            <button type="button" className="hover:text-foreground underline underline-offset-2" onClick={onRetry}>
+              Gerar de novo
+            </button>
+          )}
+        </p>
+      )}
 
       {asPanel && <VisualPanel visual={visual} isStreaming={isStreaming} />}
 
       {onVisualize && !isStreaming && message.content && (!message.visual || message.visual.status === 'skipped') && (
         <Button variant="ghost" size="sm" className="text-muted-foreground mt-2 -ml-2 h-8 text-xs" onClick={onVisualize}>
           <LayoutDashboard className="size-3.5" />
-          Mostrar visualmente
+          Explicar com desenhos
         </Button>
       )}
     </div>

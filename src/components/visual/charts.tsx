@@ -71,8 +71,8 @@ function ViewToggle({ table, onToggle }: { table: boolean; onToggle: () => void 
       variant="ghost"
       size="icon-sm"
       onClick={onToggle}
-      aria-label={table ? 'Ver gráfico' : 'Ver tabela'}
-      title={table ? 'Ver gráfico' : 'Ver tabela'}
+      aria-label={table ? 'Ver gráfico' : 'Ver em tabela'}
+      title={table ? 'Ver gráfico' : 'Ver em tabela'}
     >
       {table ? <BarChart3 /> : <Table2 />}
     </Button>

@@ -17,7 +17,7 @@ function label(text: string) {
 }
 
 function ViewToggle({ list, onToggle }: { list: boolean; onToggle: () => void }) {
-  const text = list ? 'Ver diagrama' : 'Ver como lista'
+  const text = list ? 'Ver desenho' : 'Ver em lista'
   return (
     <Button variant="ghost" size="icon-sm" onClick={onToggle} aria-label={text} title={text}>
       {list ? <Workflow /> : <List />}
@@ -57,7 +57,7 @@ function flowCode(
 const kindText: Record<string, string> = {
   start: 'início',
   end: 'final',
-  legacy: 'legado',
+  legacy: 'não é mais usado',
   decision: 'decisão',
 }
 

@@ -8,6 +8,13 @@ import { Button } from '@/components/ui/button'
 import { useChat } from '@/hooks/use-chat'
 import { cn } from '@/lib/utils'
 
+const SUGGESTIONS = [
+  'Resuma este documento em linguagem simples',
+  'Quais são as etapas principais do processo?',
+  'Quem pode fazer o quê?',
+  'Explique os termos difíceis do documento',
+]
+
 function greeting() {
   const hour = new Date().getHours()
   if (hour < 12) return 'Bom dia'
@@ -77,7 +84,8 @@ function App() {
           <div className="flex flex-1 flex-col items-center justify-center px-4 pb-24">
             <h2 className="mb-2 text-center font-serif text-3xl sm:text-4xl">{greeting()}!</h2>
             <p className="text-muted-foreground mb-8 text-center text-sm">
-              Anexe um documento e pergunte. Eu respondo e monto um painel visual para ajudar a entender.
+              Anexe um documento (PDF ou Word) pelo clipe e faça sua pergunta. Eu explico em linguagem simples e,
+              quando ajudar, com desenhos.
             </p>
             <div className="w-full max-w-2xl">
               <Composer
@@ -86,6 +94,7 @@ function App() {
                 isStreaming={chat.isStreaming}
                 visualMode={chat.visualMode}
                 onVisualModeChange={chat.setVisualMode}
+                suggestions={SUGGESTIONS}
               />
             </div>
           </div>
@@ -99,6 +108,7 @@ function App() {
                     message={m}
                     isStreaming={chat.isStreaming && i === messages.length - 1}
                     onVisualize={chat.isStreaming ? undefined : () => chat.visualize(m.id)}
+                    onRetry={chat.isStreaming ? undefined : () => chat.retry(m.id)}
                   />
                 ))}
                 <div ref={bottomRef} />

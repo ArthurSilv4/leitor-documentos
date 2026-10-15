@@ -79,6 +79,8 @@ function applyEvent(message: Message, event: ChatEvent): Message {
       return { ...message, visual: { status: 'composing', ...message.visual, spec: event.spec } }
     case 'visual': {
       const { type: _type, ...visual } = event
+      // A pessoa vê uma mensagem simples; o detalhe fica no console para o suporte.
+      if (visual.status === 'error') console.warn('Falha ao preparar os desenhos:', visual.message)
       return { ...message, visual: { ...message.visual, ...visual } }
     }
     case 'error':
@@ -174,6 +176,23 @@ export function useChat() {
     [active, isStreaming, stream, updateMessage],
   )
 
+  // Gera de novo uma resposta que falhou ou foi interrompida.
+  const retry = useCallback(
+    (msgId: string) => {
+      if (isStreaming || !active) return
+      const index = active.messages.findIndex((m) => m.id === msgId)
+      if (index < 1) return
+      const history = active.messages.slice(0, index)
+      updateMessage(active.id, msgId, (m) => ({ id: m.id, role: m.role, content: '' }))
+      void stream(active.id, msgId, {
+        messages: history.filter((m) => m.content.trim()).map((m) => ({ role: m.role, content: m.content })),
+        documents: active.documents.map(({ name, text }) => ({ name, text })),
+        visual: visualMode,
+      })
+    },
+    [active, isStreaming, stream, updateMessage, visualMode],
+  )
+
   const send = useCallback(
     async (text: string, files: ChatDocument[]) => {
       if (isStreaming) return
@@ -249,6 +268,7 @@ export function useChat() {
     setVisualMode,
     send,
     visualize,
+    retry,
     stop,
     newChat,
     select,

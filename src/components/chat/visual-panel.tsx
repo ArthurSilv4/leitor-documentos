@@ -4,8 +4,8 @@ import type { Visual } from '@/lib/chat-types'
 import { VisualBlock } from './visual-block'
 
 const statusText = {
-  extracting: 'Procurando dados para visualizar…',
-  composing: 'Escolhendo e organizando os componentes…',
+  extracting: 'Lendo o documento para preparar os desenhos…',
+  composing: 'Escolhendo os desenhos que ajudam…',
 }
 
 export function VisualPanel({ visual, isStreaming }: { visual: Visual; isStreaming: boolean }) {
@@ -15,7 +15,7 @@ export function VisualPanel({ visual, isStreaming }: { visual: Visual; isStreami
   if (visual.status === 'error') {
     return (
       <p className="text-muted-foreground mt-4 text-xs">
-        Não foi possível gerar o painel visual: {visual.message}
+        Não consegui preparar os desenhos desta vez. Tente de novo em instantes.
       </p>
     )
   }
@@ -34,9 +34,7 @@ export function VisualPanel({ visual, isStreaming }: { visual: Visual; isStreami
         <span>
           {working
             ? statusText[visual.status as keyof typeof statusText]
-            : `Painel visual · composto por ${visual.evaluator ?? 'Jev'}${
-                visual.elapsedMs ? ` em ${(visual.elapsedMs / 1000).toFixed(1)}s` : ''
-              }`}
+            : 'Desenhos para ajudar a entender'}
         </span>
       </div>
 

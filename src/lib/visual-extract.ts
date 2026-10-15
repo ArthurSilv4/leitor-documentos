@@ -40,7 +40,9 @@ Escolha o componente pelo tipo de informação:
 Regras:
 - Use apenas informações ${hasDocuments ? 'presentes nos documentos' : 'amplamente conhecidas e estáveis'}. Nunca invente números, datas, regras, perfis ou citações.
 - Prefira variedade e foque no que responde à pergunta. Diagramas com no máximo 16 nós: agrupe ou simplifique, sem perder o essencial.
-- Textos curtos, em português do Brasil. Rótulos de diagrama com poucas palavras.
+- Quem vai ver NÃO é da área técnica. Textos curtos, em português do Brasil, com palavras do dia a dia. Rótulos de diagrama com poucas palavras.
+- Não use nomes internos de sistema, parâmetros, códigos ou nomes de campos técnicos. Explique siglas no Glossary.
+- Em Concept, a analogia deve vir do cotidiano (ex.: comparar com algo do dia a dia de qualquer pessoa).
 - Se a pergunta é simples, uma saudação ou não tem nada que valha a pena visualizar, retorne "blocks": [].
 - Campos que aceitam null devem ser enviados como null quando não houver valor.
 

@@ -33,17 +33,17 @@ async function readDocx(file: File) {
 }
 
 export async function extractText(file: File): Promise<string> {
-  if (file.size > MAX_FILE_BYTES) throw new Error('Arquivo maior que 25 MB')
+  if (file.size > MAX_FILE_BYTES) throw new Error('Arquivo grande demais (máximo 25 MB)')
 
   const ext = extension(file.name)
   let text: string
   if (ext === 'pdf') text = await readPdf(file)
   else if (ext === 'docx') text = await readDocx(file)
   else if (TEXT_EXTENSIONS.includes(ext) || file.type.startsWith('text/')) text = await file.text()
-  else throw new Error('Formato não suportado')
+  else throw new Error('Tipo de arquivo não aceito. Use PDF, Word ou texto')
 
   text = text.trim()
-  if (!text) throw new Error(ext === 'pdf' ? 'PDF sem texto (talvez seja escaneado)' : 'Arquivo vazio')
+  if (!text) throw new Error(ext === 'pdf' ? 'Este PDF parece ser uma imagem escaneada; não dá para ler o texto' : 'O arquivo está vazio')
   return text
 }
 

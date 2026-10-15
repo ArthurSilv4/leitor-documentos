@@ -10,7 +10,9 @@ Para cada pergunta:
 2. Se pedir, um modelo da OpenRouter lê os documentos e extrai até 8 blocos visuais com dados reais (validados contra os schemas do catálogo), e o Jev escolhe quais respondem à pergunta e como agrupá-los (`experimental_composeSpec` do json-render).
 3. A resposta em texto é gerada em streaming já sabendo quais visuais existem e posiciona cada um no ponto da explicação em que ele ajuda (marcadores `[[visual:id]]`). O json-render desenha cada visual ali, com componentes shadcn/ui; o que o texto não posicionar aparece no fim.
 
-No campo de mensagem, o botão de modo alterna entre **Visual automático** (o Jev decide), **Sempre visual** e **Só texto**. Respostas sem visuais ganham o botão **Mostrar visualmente**, que gera um painel sob demanda.
+O público é não técnico: as respostas usam linguagem do dia a dia e explicam siglas, a interface não mostra nomes de modelos, e os erros aparecem em linguagem simples com um botão **Tentar de novo** (o detalhe técnico fica em "Detalhes para o suporte").
+
+No campo de mensagem, o botão de modo alterna entre **Desenhos: automático** (o Jev decide), **sempre** e **nunca**. Respostas sem desenhos ganham o botão **Explicar com desenhos**, que gera os visuais sob demanda.
 
 O texto dos documentos é extraído no navegador (pdf.js e mammoth).
 
