@@ -1,14 +1,17 @@
 # Leitor de Documentos
 
-Chat no estilo do Claude para conversar com documentos. Você anexa arquivos (PDF, DOCX, TXT, MD, CSV, JSON), faz perguntas e recebe uma explicação em linguagem simples. O texto usa markdown, tabelas e fluxogramas Mermaid; quando ajuda, ganha também explicadores interativos montados com [json-render](https://json-render.dev): jornada guiada de um processo, guia "E se…?", quem faz o quê por perfil, o que acontece quando alguém faz uma ação, regra com exemplos do que pode e não pode, mapa de tela, conceito com analogia, comparação, teste rápido de entendimento, além de números e gráficos.
+Chat no estilo do Claude para conversar com documentos. Você anexa arquivos (PDF, DOCX, TXT, MD, CSV, JSON), faz perguntas e recebe uma explicação em linguagem simples. O texto usa markdown, tabelas e fluxogramas Mermaid; quando ajuda, ganha também explicadores interativos montados com [json-render](https://json-render.dev): jornada guiada de um processo, guia "E se…?", quem faz o quê por perfil, o que acontece quando alguém faz uma ação, regra com exemplos do que pode e não pode, mapa de tela, conceito com analogia, comparação, teste rápido de entendimento, verificador de prazo, simulador de contas, além de números e gráficos (barras, linha e pizza).
 
 ## Como funciona
 
-Para cada pergunta:
+Para cada pergunta, o texto começa na hora e, em paralelo:
 
-1. O **Jev** (`typesafe/jev-1.14` na OpenRouter) classifica se a pergunta pede visuais (fluxos, papéis, comparações, números) ou se texto basta (pergunta pontual, definição curta, conversa). Na dúvida, fica só no texto e a resposta começa na hora.
-2. Se pedir, um modelo da OpenRouter lê os documentos e extrai até 8 blocos visuais com dados reais (validados contra os schemas do catálogo), e o Jev escolhe quais respondem à pergunta e como agrupá-los (`experimental_composeSpec` do json-render).
-3. A resposta em texto é gerada em streaming já sabendo quais visuais existem e posiciona cada um no ponto da explicação em que ele ajuda (marcadores `[[visual:id]]`). O json-render desenha cada visual ali, com componentes shadcn/ui; o que o texto não posicionar aparece no fim.
+1. O **Jev** (`typesafe/jev-1.14` na OpenRouter) classifica se a pergunta pede visuais (processo, perfis, regras, prazos, contas, números) ou se texto basta. Na dúvida, fica só no texto.
+2. Se pedir, um modelo da OpenRouter lê os documentos e extrai até 8 blocos com dados reais (validados contra os schemas do catálogo), e o Jev escolhe quais respondem à pergunta (`experimental_composeSpec` do json-render).
+3. Os visuais aparecem assim que ficam prontos. Quando o texto termina, o Jev escolhe depois de qual parágrafo cada visual ajuda mais, e ele vai para lá.
+4. A resposta termina com até 3 **próximas perguntas sugeridas**, em botões que enviam a pergunta.
+
+Os simuladores não executam código vindo da IA: as fórmulas são avaliadas por uma calculadora própria (`src/lib/formula.ts`) que só aceita números, as entradas do simulador e operações básicas.
 
 O público é não técnico: as respostas usam linguagem do dia a dia e explicam siglas, a interface não mostra nomes de modelos, e os erros aparecem em linguagem simples com um botão **Tentar de novo** (o detalhe técnico fica em "Detalhes para o suporte").
 

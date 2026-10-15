@@ -37,12 +37,15 @@ Escolha o componente pelo que ajuda a entender:
 - descrição de uma tela do sistema → ScreenMap
 - um conceito central → Concept, sempre com uma analogia do cotidiano
 - duas ou três alternativas → Comparison
+- um prazo de antecedência ("marcar com pelo menos X horas") → DeadlineCheck, para a pessoa testar a própria data
+- uma conta ou regra com números que a pessoa pode querer testar (valores, taxas, limites, quantidades) → Simulator, com fórmulas simples sobre as entradas
 - quando a explicação é longa ou cheia de regras → um Quiz curto (no máximo um, 2 ou 3 perguntas)
-- números comparáveis → Metric, BarChart ou LineChart; datas → Timeline
+- números comparáveis → Metric, BarChart ou LineChart; partes de um todo → PieChart; datas → Timeline
 
 Regras:
 - Use apenas informações ${hasDocuments ? 'presentes nos documentos' : 'amplamente conhecidas e estáveis'}. Nunca invente números, datas, regras, perfis ou exemplos que contradigam o documento.
 - Exemplos de RuleExamples e opções de DecisionGuide devem ser situações reais e concretas ("Agendar para amanhã às 10h"), não abstrações.
+- Em Simulator, as fórmulas só podem usar os ids das entradas, números e as operações permitidas; as regras e valores vêm do documento.
 - Quem vai ver NÃO é da área técnica: palavras do dia a dia, frases curtas, português do Brasil.
 - Não use nomes internos de sistema, parâmetros, códigos ou nomes de campos técnicos. Siglas, só se explicadas.
 - Foque no que responde à pergunta. Menos blocos bons valem mais que muitos blocos.

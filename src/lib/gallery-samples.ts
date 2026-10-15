@@ -109,6 +109,42 @@ export const gallerySections: GallerySection[] = [
         },
       },
       {
+        component: 'DeadlineCheck',
+        name: 'Verificador de prazo',
+        when: 'Regras de antecedência: a pessoa escolhe a própria data e hora e vê se pode.',
+        props: {
+          title: 'Posso marcar para essa data?',
+          rule: 'A conferência precisa ser marcada com pelo menos 24 horas de antecedência.',
+          minHoursAhead: 24,
+          maxDaysAhead: null,
+          okText: 'Dá para pedir a conferência nesse horário.',
+          tooSoonText: 'Falta menos de 24 horas. Escolha um horário mais tarde.',
+          tooLateText: null,
+        },
+      },
+      {
+        component: 'Simulator',
+        name: 'Simulador',
+        when: 'Contas e regras com números: a pessoa muda os valores e vê o resultado na hora.',
+        props: {
+          title: 'Cabe na observação?',
+          description: 'A observação ao aprovar aceita até 1.000 caracteres',
+          inputs: [
+            { id: 'linhas', label: 'Quantas linhas você vai escrever', kind: 'number', unit: 'linhas', min: 1, max: 30, step: 1, initial: 8 },
+            { id: 'por_linha', label: 'Tamanho das linhas', kind: 'choice', initial: 60, options: [{ label: 'Curtas (~40 letras)', value: 40 }, { label: 'Médias (~60)', value: 60 }, { label: 'Longas (~90)', value: 90 }] },
+          ],
+          outputs: [
+            { label: 'Caracteres aproximados', formula: 'linhas * por_linha', unit: null },
+            { label: 'Sobram', formula: 'max(1000 - linhas * por_linha, 0)', unit: null },
+          ],
+          messages: [
+            { when: 'linhas * por_linha > 1000', text: 'Passa do limite: resuma o texto.', tone: 'blocked' },
+            { when: 'linhas * por_linha > 850', text: 'Está perto do limite.', tone: 'attention' },
+            { when: 'linhas * por_linha <= 850', text: 'Cabe tranquilo.', tone: 'ok' },
+          ],
+        },
+      },
+      {
         component: 'Quiz',
         name: 'Teste seu entendimento',
         when: 'Depois de explicações longas ou cheias de regras, para conferir se ficou claro.',
@@ -181,6 +217,17 @@ export const gallerySections: GallerySection[] = [
           description: 'Números fictícios, só para mostrar o componente',
           unit: null,
           data: [{ label: 'jan', value: 32 }, { label: 'fev', value: 41 }, { label: 'mar', value: 38 }, { label: 'abr', value: 52 }, { label: 'mai', value: 60 }],
+        },
+      },
+      {
+        component: 'PieChart',
+        name: 'Gráfico de pizza',
+        when: 'Partes de um todo (até 5 fatias). Tem legenda com porcentagens e botão para ver em tabela.',
+        props: {
+          title: 'Pedidos por situação',
+          description: 'Números fictícios, só para mostrar o componente',
+          unit: null,
+          data: [{ label: 'Executada', value: 48 }, { label: 'Aprovada', value: 21 }, { label: 'Aguardando Aprovação', value: 17 }, { label: 'Cancelada', value: 9 }],
         },
       },
       {

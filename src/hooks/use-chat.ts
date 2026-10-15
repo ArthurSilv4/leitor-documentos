@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { ChatEvent, ChatRequestBody, VisualMode } from '@/lib/chat-protocol'
+import { parseAnswer } from '@/lib/answer-format'
 import { runChatInBrowser } from '@/lib/browser-chat'
 import type { ChatDocument, Conversation, Message } from '@/lib/chat-types'
 
@@ -56,6 +57,11 @@ async function* fetchChat(body: ChatRequestBody, signal: AbortSignal): AsyncGene
   yield* readNdjson(response)
 }
 
+// Turno para o modelo: a resposta vai sem as sugestões do fim.
+function toTurn(m: Message): { role: Message['role']; content: string } {
+  return { role: m.role, content: m.role === 'assistant' ? parseAnswer(m.content).body : m.content }
+}
+
 async function* readNdjson(response: Response): AsyncGenerator<ChatEvent> {
   const reader = response.body!.getReader()
   const decoder = new TextDecoder()
@@ -83,6 +89,8 @@ function applyEvent(message: Message, event: ChatEvent): Message {
       if (visual.status === 'error') console.warn('Falha ao preparar os desenhos:', visual.message)
       return { ...message, visual: { ...message.visual, ...visual } }
     }
+    case 'placement':
+      return { ...message, visual: message.visual && { ...message.visual, anchors: event.anchors } }
     case 'error':
       return { ...message, error: event.message }
     default:
@@ -167,7 +175,7 @@ export function useChat() {
       const history = active.messages.slice(0, index + 1)
       updateMessage(active.id, msgId, (m) => ({ ...m, visual: { status: 'extracting', placement: 'panel' } }))
       void stream(active.id, msgId, {
-        messages: history.filter((m) => m.content.trim()).map((m) => ({ role: m.role, content: m.content })),
+        messages: history.filter((m) => m.content.trim()).map(toTurn),
         documents: active.documents.map(({ name, text }) => ({ name, text })),
         visual: 'always',
         answer: false,
@@ -185,7 +193,7 @@ export function useChat() {
       const history = active.messages.slice(0, index)
       updateMessage(active.id, msgId, (m) => ({ id: m.id, role: m.role, content: '' }))
       void stream(active.id, msgId, {
-        messages: history.filter((m) => m.content.trim()).map((m) => ({ role: m.role, content: m.content })),
+        messages: history.filter((m) => m.content.trim()).map(toTurn),
         documents: active.documents.map(({ name, text }) => ({ name, text })),
         visual: visualMode,
       })
@@ -229,7 +237,7 @@ export function useChat() {
       await stream(conv.id, assistantMsg.id, {
         messages: history
           .filter((m) => m.content.trim())
-          .map((m) => ({ role: m.role, content: m.content })),
+          .map(toTurn),
         documents: documents.map(({ name, text }) => ({ name, text })),
         visual: visualMode,
       })

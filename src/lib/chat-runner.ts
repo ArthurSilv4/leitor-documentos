@@ -5,6 +5,7 @@ import {
   type Spec,
 } from '@json-render/core'
 
+import { parseAnswer, splitBlocks } from './answer-format.ts'
 import type { ChatEvent, ChatRequestBody } from './chat-protocol.ts'
 import { catalog } from './visual-catalog.ts'
 import { layoutCandidates } from './visual-extract.ts'
@@ -12,8 +13,8 @@ import { layoutCandidates } from './visual-extract.ts'
 // Fluxo de uma pergunta, igual no servidor (OpenRouter + Jev) e na versão
 // artifact (Claude). Cada lado só fornece os adaptadores de modelo.
 export type ChatAdapters = {
-  /** Resposta em texto, em streaming; visualGuide lista os visuais a posicionar */
-  streamAnswer: (emitDelta: (delta: string) => void, visualGuide: string | null) => Promise<void>
+  /** Resposta em texto, em streaming */
+  streamAnswer: (emitDelta: (delta: string) => void) => Promise<void>
   /** Blocos visuais extraídos dos documentos */
   extract: () => Promise<Experimental_CompositionCandidate[]>
   /** Modelo de decisão (Jev ou substituto) */
@@ -36,7 +37,7 @@ export function visualGateQuestions(body: ChatRequestBody) {
         type: 'choice' as const,
         instructions:
           'A pessoa fez uma pergunta, geralmente sobre documentos anexados. Decida se, além da resposta em texto, um painel visual ajudaria de verdade a entender a resposta. ' +
-          'Escolha "visual" só quando um explicador interativo ajudaria a entender: processo com etapas ou status, dúvida que depende da situação da pessoa, o que cada perfil pode fazer, consequências de uma ação, regra com exemplos, uma tela do sistema, comparação entre opções ou números. ' +
+          'Escolha "visual" só quando um explicador interativo ajudaria a entender: processo com etapas ou status, dúvida que depende da situação da pessoa, o que cada perfil pode fazer, consequências de uma ação, regra com exemplos, prazo ou conta que a pessoa pode testar, uma tela do sistema, comparação entre opções ou números. ' +
           'Escolha "texto" para perguntas pontuais ou factuais, sim ou não, uma definição curta, pedidos de redação ou resumo corrido, saudações e conversa. Na dúvida, escolha "texto".',
         criteria: {
           visual: 'Um painel visual ajuda de verdade a entender a resposta',
@@ -47,10 +48,10 @@ export function visualGateQuestions(body: ChatRequestBody) {
   }
 }
 
-type PreparedVisual = { spec: Spec; guide: string }
+type PreparedVisual = { spec: Spec; units: { id: string; description: string }[] }
 
-// Lista os visuais de primeiro nível (os filhos da raiz) para o texto posicionar.
-function visualGuide(spec: Spec, descriptions: Map<string, string>): string {
+// Visuais de primeiro nível (filhos da raiz), com uma descrição de cada um.
+function describeUnits(spec: Spec, descriptions: Map<string, string>) {
   const describe = (id: string): string => {
     const element = spec.elements[id]
     const known = descriptions.get(`${element.type}:${JSON.stringify(element.props)}`)
@@ -58,7 +59,7 @@ function visualGuide(spec: Spec, descriptions: Map<string, string>): string {
     const children = element.children ?? []
     return children.length ? `Grade com: ${children.map(describe).join('; ')}` : element.type
   }
-  return (spec.elements[spec.root]?.children ?? []).map((id) => `[[visual:${id}]] ${describe(id)}`).join('\n')
+  return (spec.elements[spec.root]?.children ?? []).map((id) => ({ id, description: describe(id) }))
 }
 
 async function prepareVisual(
@@ -106,7 +107,7 @@ async function prepareVisual(
     maxElements: 12,
     signal,
   })) {
-    // Inline, o visual só aparece junto com o texto; no painel, mostra a montagem.
+    // No painel, mostra a montagem; no texto, só o resultado final.
     if (event.type === 'step') {
       if (placement === 'panel') emit({ type: 'spec', spec: event.spec })
       continue
@@ -125,7 +126,7 @@ async function prepareVisual(
       placement,
     })
     const descriptions = new Map(content.map((c) => [`${c.element.type}:${JSON.stringify(c.element.props)}`, c.description]))
-    return { spec: event.spec, guide: visualGuide(event.spec, descriptions) }
+    return { spec: event.spec, units: describeUnits(event.spec, descriptions) }
   }
   return null
 }
@@ -155,8 +156,44 @@ function createChannel<T>() {
   }
 }
 
-// Primeiro os visuais (quando ajudam), depois o texto, que os posiciona
-// no meio da explicação. Sem visual, o texto começa logo após a decisão.
+// Com o texto pronto, o modelo de decisão escolhe depois de qual trecho
+// cada visual ajuda mais o leitor.
+async function placeVisuals(
+  text: string,
+  units: PreparedVisual['units'],
+  adapters: ChatAdapters,
+  signal: AbortSignal,
+): Promise<Record<string, number>> {
+  const blocks = splitBlocks(parseAnswer(text).body)
+  const last = Math.max(blocks.length - 1, 0)
+  if (blocks.length < 2) return Object.fromEntries(units.map((u) => [u.id, last]))
+
+  const criteria = Object.fromEntries(
+    blocks.map((block, i) => [`t${i}`, block.replace(/\s+/g, ' ').slice(0, 220)]),
+  )
+  const questions = Object.fromEntries(
+    units.map((u) => [
+      `local_${u.id}`,
+      {
+        type: 'choice' as const,
+        instructions: `O visual "${u.description}" vai aparecer no meio da resposta. Escolha o trecho depois do qual ele mais ajuda o leitor: logo após o trecho que fala do mesmo assunto. Evite colocar logo depois de um título.`,
+        criteria,
+      },
+    ]),
+  )
+  const { answers } = await adapters.evaluate({ state: { resposta: blocks }, questions, signal })
+  return Object.fromEntries(
+    units.map((u) => {
+      const choice = answers[`local_${u.id}`]?.choice ?? ''
+      const index = Number(choice.slice(1))
+      return [u.id, Number.isInteger(index) && index >= 0 && index <= last ? index : last]
+    }),
+  )
+}
+
+// O texto começa na hora. Em paralelo, o modelo de decisão avalia se vale
+// desenhar algo e, se sim, os visuais são preparados e aparecem assim que
+// ficam prontos. No fim, cada um vai para o ponto certo da explicação.
 export async function* runChat(
   body: ChatRequestBody,
   adapters: ChatAdapters,
@@ -165,18 +202,35 @@ export async function* runChat(
   const channel = createChannel<ChatEvent>()
   const emit = (event: ChatEvent) => channel.push(event)
 
-  const run = async () => {
-    const visual = await prepareVisual(body, adapters, signal, emit).catch((err) => {
-      if (!signal.aborted) emit({ type: 'visual', status: 'error', message: adapters.errorMessage(err) })
-      return null
-    })
-    if (body.answer === false || signal.aborted) return
+  const visualTask = prepareVisual(body, adapters, signal, emit).catch((err) => {
+    if (!signal.aborted) emit({ type: 'visual', status: 'error', message: adapters.errorMessage(err) })
+    return null
+  })
 
-    await adapters
-      .streamAnswer((delta) => emit({ type: 'text', delta }), visual?.guide ?? null)
-      .catch((err) => {
-        if (!signal.aborted) emit({ type: 'error', message: adapters.errorMessage(err) })
-      })
+  let text = ''
+  const textTask =
+    body.answer === false
+      ? Promise.resolve(false)
+      : adapters
+          .streamAnswer((delta) => {
+            text += delta
+            emit({ type: 'text', delta })
+          })
+          .then(() => true)
+          .catch((err) => {
+            if (!signal.aborted) emit({ type: 'error', message: adapters.errorMessage(err) })
+            return false
+          })
+
+  const run = async () => {
+    const [visual, textOk] = await Promise.all([visualTask, textTask])
+    if (!visual || !textOk || signal.aborted || visual.units.length === 0) return
+    try {
+      emit({ type: 'placement', anchors: await placeVisuals(text, visual.units, adapters, signal) })
+    } catch (err) {
+      // Sem posição escolhida, os visuais ficam no fim da resposta
+      if (!signal.aborted) console.warn('Não foi possível posicionar os visuais:', adapters.errorMessage(err))
+    }
   }
   run().finally(() => channel.close())
 

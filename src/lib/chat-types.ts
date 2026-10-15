@@ -17,6 +17,8 @@ export type Visual = {
   message?: string
   /** inline: dentro do texto; panel: bloco depois da resposta (botão ou conversas antigas) */
   placement?: 'inline' | 'panel'
+  /** Trecho do texto (índice de splitBlocks) depois do qual entra cada visual */
+  anchors?: Record<string, number>
 }
 
 export type Message = {

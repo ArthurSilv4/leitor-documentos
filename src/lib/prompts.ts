@@ -20,14 +20,9 @@ export function documentsContext(
   return parts.join('\n\n')
 }
 
-// Marcador que a resposta usa para posicionar um visual no texto.
-export const VISUAL_MARKER = /\[\[visual:([\w-]+)\]\]/g
-
 export function answerSystemPrompt(
   documents: ChatRequestBody['documents'],
   maxChars = MAX_DOCUMENT_CHARS,
-  /** Visuais já prontos, um por linha: "[[visual:id]] descrição" */
-  visualGuide: string | null = null,
 ): string {
   const base = `Você é um assistente que ajuda pessoas a entender documentos.
 Quem conversa com você NÃO é da área técnica: pode ser alguém da operação, do atendimento ou da gestão.
@@ -42,21 +37,12 @@ Como responder:
 - Se a resposta não estiver nos documentos, diga isso claramente em vez de inventar.
 - Tabelas pequenas em markdown são bem-vindas quando organizam a informação.
 - Para um fluxo simples, você pode usar um bloco \`\`\`mermaid com flowchart LR ou TD de no máximo 8 caixas e rótulos curtos, entre aspas. Não use outros tipos de diagrama.
-- Não desenhe gráficos com caracteres.`
+- Não desenhe gráficos com caracteres.
+- Escreva em parágrafos curtos, separados por linha em branco: desenhos interativos podem ser encaixados entre eles.
 
-  const visuals = visualGuide
-    ? `
-
-Estes elementos visuais já estão prontos e aparecem para a pessoa exatamente onde você colocar o marcador:
-${visualGuide}
-
-Como usar:
-- Coloque cada marcador numa linha sozinha, no ponto da explicação em que o visual ajuda o leitor. Use cada um no máximo uma vez.
-- Antes do marcador, uma frase curta que introduz o visual ("Veja o ciclo completo:"). Depois, se ajudar, comente o ponto principal que ele mostra.
-- Não repita em texto, tabela ou diagrama o que o visual já mostra; explique o raciocínio em volta dele.
-- Escreva o marcador exatamente como está, por exemplo [[visual:node_1]].`
-    : ''
+No final, numa linha separada, sugira até 3 próximas perguntas curtas que a pessoa provavelmente faria sobre o documento, escritas como ela perguntaria, neste formato exato:
+[[sugestoes: Primeira pergunta? | Segunda pergunta? | Terceira pergunta?]]`
 
   const context = documentsContext(documents, maxChars)
-  return `${base}${visuals}${context ? `\n\nDocumentos anexados:\n\n${context}` : ''}`
+  return `${base}${context ? `\n\nDocumentos anexados:\n\n${context}` : ''}`
 }

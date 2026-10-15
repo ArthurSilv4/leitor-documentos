@@ -6,7 +6,10 @@ import {
   CartesianGrid,
   LabelList,
   Line,
+  Cell,
   LineChart as RLineChart,
+  Pie,
+  PieChart as RPieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -173,6 +176,78 @@ export function LineChart({ title, description, unit, data }: ChartProps) {
             />
           </RLineChart>
         </ResponsiveContainer>
+      )}
+    </VisualFrame>
+  )
+}
+
+// Paleta categórica validada, em ordem fixa (até 5 fatias).
+const SERIES = ['--viz-series-1', '--viz-series-2', '--viz-series-3', '--viz-series-4', '--viz-series-5']
+
+export function PieChart({ title, description, unit, data }: ChartProps) {
+  const [table, setTable] = useState(false)
+  const total = data.reduce((sum, d) => sum + d.value, 0)
+  const percent = (v: number) => `${Math.round((v / total) * 100)}%`
+
+  return (
+    <VisualFrame
+      title={title}
+      description={description}
+      action={<ViewToggle table={table} onToggle={() => setTable((t) => !t)} />}
+    >
+      {table ? (
+        <DataTable data={data} unit={unit} />
+      ) : (
+        <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
+          <div className="size-44 shrink-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <RPieChart>
+                <Pie
+                  data={data}
+                  dataKey="value"
+                  nameKey="label"
+                  innerRadius="58%"
+                  outerRadius="100%"
+                  stroke="var(--card)"
+                  strokeWidth={2}
+                  isAnimationActive={false}
+                >
+                  {data.map((d, i) => (
+                    <Cell key={d.label} fill={`var(${SERIES[i % SERIES.length]})`} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  content={(p) => {
+                    const item = p.payload?.[0]
+                    return (
+                      <ChartTooltip
+                        active={p.active}
+                        payload={item ? [{ value: item.value }] : []}
+                        label={item?.name}
+                        unit={unit}
+                      />
+                    )
+                  }}
+                />
+              </RPieChart>
+            </ResponsiveContainer>
+          </div>
+          {/* Legenda sempre visível: cor ao lado, texto nas cores do tema */}
+          <ul className="w-full min-w-0 space-y-2 text-sm">
+            {data.map((d, i) => (
+              <li key={d.label} className="flex items-center gap-2.5">
+                <span
+                  className="size-3 shrink-0 rounded-sm"
+                  style={{ background: `var(${SERIES[i % SERIES.length]})` }}
+                  aria-hidden
+                />
+                <span className="min-w-0 flex-1">{d.label}</span>
+                <span className="font-semibold tabular-nums">{percent(d.value)}</span>
+                <span className="text-muted-foreground w-20 text-right text-xs tabular-nums">{formatValue(d.value, unit)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </VisualFrame>
   )

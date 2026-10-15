@@ -33,5 +33,7 @@ export type ChatEvent =
       placement?: 'inline' | 'panel'
     }
   | { type: 'spec'; spec: Spec }
+  /** Depois de qual trecho do texto (índice de splitBlocks) entra cada visual */
+  | { type: 'placement'; anchors: Record<string, number> }
   | { type: 'error'; message: string }
   | { type: 'done' }

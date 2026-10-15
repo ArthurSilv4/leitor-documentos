@@ -86,6 +86,10 @@
 
   /* Série única dos gráficos (paleta validada para daltonismo) */
   --viz-series-1: #2a78d6;
+  --viz-series-2: #eb6834;
+  --viz-series-3: #1baf7a;
+  --viz-series-4: #eda100;
+  --viz-series-5: #e87ba4;
 }
 
 .dark {
@@ -124,6 +128,10 @@
   --sidebar-ring: oklch(0.6 0.1 45);
 
   --viz-series-1: #3987e5;
+  --viz-series-2: #d95926;
+  --viz-series-3: #199e70;
+  --viz-series-4: #c98500;
+  --viz-series-5: #d55181;
 }
 
 @layer base {

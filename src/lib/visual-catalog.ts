@@ -3,6 +3,8 @@ import { schema } from '@json-render/react/schema'
 import { shadcnComponentDefinitions as shadcn } from '@json-render/shadcn/catalog'
 import { z } from 'zod'
 
+import { isValidFormula } from './formula.ts'
+
 // Catálogo do painel visual que acompanha as respostas do chat.
 // Só contém schemas Zod: é usado no navegador (renderização) e no
 // servidor (extração dos blocos e composição com o Jev).
@@ -327,6 +329,73 @@ export const visualComponents = {
       .refine((q) => q.questions.every((x) => x.correct < x.options.length), 'Resposta certa fora das opções'),
     description: 'Teste rápido de entendimento: 1 a 3 perguntas de múltipla escolha com a explicação de cada resposta',
   },
+
+  // Simulação: a pessoa muda valores e vê o resultado
+  Simulator: {
+    props: z
+      .object({
+        title: z.string(),
+        description: z.string().nullable(),
+        inputs: z
+          .array(
+            z.object({
+              id: z.string().regex(/^[a-z_][a-z0-9_]*$/),
+              label: z.string(),
+              kind: z.enum(['number', 'choice']),
+              unit: z.string().nullable(),
+              min: z.number().nullable(),
+              max: z.number().nullable(),
+              step: z.number().positive().nullable(),
+              initial: z.number(),
+              options: z.array(z.object({ label: z.string(), value: z.number() })).min(2).max(6).nullable(),
+            }),
+          )
+          .min(1)
+          .max(4),
+        outputs: z
+          .array(z.object({ label: z.string(), formula: z.string(), unit: z.string().nullable() }))
+          .min(1)
+          .max(3),
+        messages: z
+          .array(z.object({ when: z.string(), text: z.string(), tone: z.enum(['ok', 'attention', 'blocked']) }))
+          .max(4)
+          .nullable(),
+      })
+      .refine((sim) => {
+        const ids = sim.inputs.map((i) => i.id)
+        const valid = (f: string) => isValidFormula(f, ids)
+        return (
+          sim.inputs.every((i) => i.kind === 'number' || (i.options?.length ?? 0) >= 2) &&
+          sim.outputs.every((o) => valid(o.formula)) &&
+          (sim.messages ?? []).every((m) => valid(m.when))
+        )
+      }, 'Fórmula inválida ou entrada de escolha sem opções'),
+    description:
+      'Simulador: a pessoa muda valores (números ou escolhas) e vê o resultado na hora. Fórmulas só com aritmética (+ - * / %), comparações (< <= > >= == !=), && || ! e min, max, round, floor, ceil, abs, usando os ids das entradas. messages: a primeira cuja condição when for verdadeira aparece',
+  },
+  DeadlineCheck: {
+    props: z.object({
+      title: z.string(),
+      rule: z.string(),
+      minHoursAhead: z.number().positive(),
+      maxDaysAhead: z.number().positive().nullable(),
+      okText: z.string(),
+      tooSoonText: z.string(),
+      tooLateText: z.string().nullable(),
+    }),
+    description:
+      'Verificador de prazo: a pessoa escolhe uma data e hora e vê se a regra de antecedência permite (ex.: marcar com pelo menos 24 horas). Use quando o documento tem uma antecedência mínima ou máxima',
+  },
+  PieChart: {
+    props: z.object({
+      title: z.string(),
+      description: z.string().nullable(),
+      unit: z.string().nullable(),
+      data: z.array(point.extend({ value: z.number().positive() })).min(2).max(5),
+    }),
+    description:
+      'Gráfico de pizza para partes de um todo (até 5 fatias; junte o resto em "Outros"). Use só quando a proporção de cada parte é o que importa',
+  },
 }
 
 export const catalog = defineCatalog(schema, {
@@ -346,10 +415,13 @@ export const contentComponents = [
   'ScreenMap',
   'Concept',
   'Comparison',
+  'Simulator',
+  'DeadlineCheck',
   'Quiz',
   'Metric',
   'BarChart',
   'LineChart',
+  'PieChart',
   'Timeline',
 ] as const satisfies readonly (keyof typeof visualComponents)[]
 

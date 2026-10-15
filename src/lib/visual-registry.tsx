@@ -2,7 +2,7 @@ import { defineRegistry } from '@json-render/react'
 import { shadcnComponents } from '@json-render/shadcn'
 
 import { KeyPoints, Metric, Quote, Steps, Timeline } from '@/components/visual/blocks'
-import { BarChart, LineChart } from '@/components/visual/charts'
+import { BarChart, LineChart, PieChart } from '@/components/visual/charts'
 import { Flow, Sequence } from '@/components/visual/diagrams'
 import { Comparison, Concept, FeatureMap, Glossary, PermissionMatrix } from '@/components/visual/didactic'
 import {
@@ -14,6 +14,7 @@ import {
   RuleExamples,
   ScreenMap,
 } from '@/components/visual/explainers'
+import { DeadlineCheck, Simulator } from '@/components/visual/simulator'
 import { VisualFrame } from '@/components/visual/frame'
 import { catalog } from '@/lib/visual-catalog'
 
@@ -56,5 +57,8 @@ export const { registry } = defineRegistry(catalog, {
     RuleExamples: ({ props }) => <RuleExamples {...props} />,
     ScreenMap: ({ props }) => <ScreenMap {...props} />,
     Quiz: ({ props }) => <Quiz {...props} />,
+    Simulator: ({ props }) => <Simulator {...props} />,
+    DeadlineCheck: ({ props }) => <DeadlineCheck {...props} />,
+    PieChart: ({ props }) => <PieChart {...props} />,
   },
 })

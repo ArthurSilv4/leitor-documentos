@@ -1,7 +1,8 @@
-import { AlertCircle, LayoutDashboard, Loader2, RotateCcw } from 'lucide-react'
+import { AlertCircle, CornerDownRight, LayoutDashboard, Loader2, RotateCcw } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 
+import { parseAnswer } from '@/lib/answer-format'
 import type { Message } from '@/lib/chat-types'
 import { friendlyError } from '@/lib/friendly-error'
 import { AnswerWithVisuals } from './answer-with-visuals'
@@ -14,12 +15,15 @@ export function ChatMessage({
   isStreaming,
   onVisualize,
   onRetry,
+  onAsk,
 }: {
   message: Message
   isStreaming: boolean
   /** Ausentes enquanto outra resposta está sendo gerada */
   onVisualize?: () => void
   onRetry?: () => void
+  /** Só na última resposta: envia uma das perguntas sugeridas */
+  onAsk?: (question: string) => void
 }) {
   if (message.role === 'user') {
     return (
@@ -45,21 +49,13 @@ export function ChatMessage({
   const inlineSpec = visual?.placement === 'inline' && visual.spec?.root ? visual.spec : null
   const asPanel = visual && (visual.placement === 'panel' || (!visual.placement && visual.status === 'done'))
 
-  const preparing =
-    isStreaming && !message.content && working && visual.placement !== 'panel' && visual.status !== 'deciding'
-  const thinking = isStreaming && !message.content && !message.error && !preparing
+  const { body, suggestions } = parseAnswer(message.content)
+  // Desenhos sendo preparados em paralelo ao texto (a decisão não aparece)
+  const preparing = working && visual.placement !== 'panel' && visual.status !== 'deciding'
+  const thinking = isStreaming && !body && !message.error
 
   return (
     <div>
-      {preparing && (
-        <p className="text-muted-foreground flex items-center gap-2 py-2 text-sm">
-          <Loader2 className="size-4 animate-spin" />
-          {visual.status === 'extracting'
-            ? 'Lendo o documento para preparar os desenhos…'
-            : 'Escolhendo os desenhos que ajudam a explicar…'}
-        </p>
-      )}
-
       {thinking ? (
         <div className="flex items-center gap-1.5 py-2" aria-label="Pensando">
           {[0, 150, 300].map((delay) => (
@@ -71,12 +67,21 @@ export function ChatMessage({
           ))}
         </div>
       ) : (
-        message.content &&
+        body &&
         (inlineSpec ? (
-          <AnswerWithVisuals content={message.content} spec={inlineSpec} isStreaming={isStreaming} />
+          <AnswerWithVisuals content={body} spec={inlineSpec} anchors={visual?.anchors} isStreaming={isStreaming} />
         ) : (
-          <Markdown isStreaming={isStreaming}>{message.content}</Markdown>
+          <Markdown isStreaming={isStreaming}>{body}</Markdown>
         ))
+      )}
+
+      {preparing && (
+        <p className="text-muted-foreground mt-3 flex items-center gap-2 text-sm">
+          <Loader2 className="size-4 animate-spin" />
+          {visual.status === 'extracting'
+            ? 'Lendo o documento para preparar os desenhos…'
+            : 'Escolhendo os desenhos que ajudam a explicar…'}
+        </p>
       )}
 
       {visual?.status === 'error' && visual.placement !== 'panel' && (
@@ -124,6 +129,23 @@ export function ChatMessage({
           <LayoutDashboard className="size-3.5" />
           Explicar com desenhos
         </Button>
+      )}
+
+      {onAsk && !isStreaming && suggestions.length > 0 && (
+        <div className="mt-4 flex flex-col items-start gap-1.5">
+          <p className="text-muted-foreground text-xs">Você também pode perguntar:</p>
+          {suggestions.map((question) => (
+            <button
+              key={question}
+              type="button"
+              onClick={() => onAsk(question)}
+              className="bg-card hover:bg-accent flex items-center gap-2 rounded-lg border px-3 py-1.5 text-left text-sm transition-colors"
+            >
+              <CornerDownRight className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
+              {question}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   )

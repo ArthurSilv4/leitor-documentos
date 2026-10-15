@@ -134,6 +134,7 @@ function App() {
                     isStreaming={chat.isStreaming && i === messages.length - 1}
                     onVisualize={chat.isStreaming ? undefined : () => chat.visualize(m.id)}
                     onRetry={chat.isStreaming ? undefined : () => chat.retry(m.id)}
+                    onAsk={chat.isStreaming || i !== messages.length - 1 ? undefined : (q) => chat.send(q, [])}
                   />
                 ))}
                 <div ref={bottomRef} />
