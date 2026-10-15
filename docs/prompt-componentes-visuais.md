@@ -6,7 +6,7 @@
 
 ## Objetivo
 
-Este chat já responde perguntas com base em documentos (busca e recuperação de trechos) e usa outras ferramentas. Quero que, **quando ajudar**, a resposta traga **explicações visuais interativas** para pessoas **não técnicas** entenderem o conteúdo: não enfeites, mas visuais que fazem o que o texto não consegue fazer, como deixar a pessoa explorar um processo, simular a própria situação, ver causa e efeito ou conferir se entendeu.
+Este chat já responde perguntas com base em documentos (busca e recuperação de trechos) e usa outras ferramentas. Quero que, **quando ajudar**, a resposta traga **explicações visuais interativas** para pessoas **não técnicas** entenderem o conteúdo. Cada visual precisa fazer algo que o texto não consegue: deixar a pessoa explorar um processo, simular a própria situação, ver causa e efeito ou conferir se entendeu. Visual decorativo não entra.
 
 Use a tecnologia e as bibliotecas que o projeto já usa. Escolha o que faltar seguindo o padrão do projeto. Este documento descreve **como deve funcionar**, não como implementar.
 
@@ -27,11 +27,12 @@ Use a tecnologia e as bibliotecas que o projeto já usa. Escolha o que faltar se
 3. **Preparação dos visuais**, se a decisão for sim:
    - um passo lê **os trechos já recuperados para esta pergunta**, junto com a conversa, e propõe até 8 blocos visuais preenchidos com o conteúdo desses trechos;
    - cada bloco é verificado (veja "Regras"), e o que estiver incompleto ou incoerente é descartado;
-   - um passo de seleção escolhe, entre os blocos válidos, só os que ajudam a responder esta pergunta (poucos e bons) e como agrupá-los.
-4. **Exibição aos poucos:** cada visual aparece no fim da resposta assim que fica pronto, mesmo com o texto ainda chegando. Enquanto prepara, a tela mostra uma linha discreta, por exemplo "Lendo o documento para preparar os desenhos…". Durante a decisão, não aparece nada.
+   - um passo de seleção escolhe, entre os blocos válidos, só os que ajudam a responder esta pergunta e como agrupá-los. Normalmente são de 1 a 3 visuais por resposta.
+4. **Exibição aos poucos:** cada visual aparece no fim da resposta assim que fica pronto, mesmo com o texto ainda chegando. Enquanto prepara, a tela mostra uma linha discreta, por exemplo "Lendo o documento para preparar os desenhos…".
 5. **Encaixe no texto:** quando texto e visuais terminam, um passo escolhe depois de qual parágrafo cada visual ajuda mais (logo após o trecho que fala do mesmo assunto, nunca logo depois de um título), e o visual vai para lá. Se esse passo falhar, os visuais ficam no fim.
-6. **Próximas perguntas:** a resposta termina com até 3 perguntas curtas que a pessoa provavelmente faria em seguida, escritas como ela perguntaria. Elas aparecem como botões, e um clique envia a pergunta. Esse trecho não aparece no texto e não volta para o modelo no histórico da conversa.
-7. **Persistência:** ao reabrir a conversa, os visuais aparecem nos mesmos lugares e no mesmo estado inicial.
+6. **Próximas perguntas:** a resposta termina com até 3 perguntas curtas que a pessoa provavelmente faria em seguida, escritas como ela perguntaria e que os documentos conseguem responder. Elas aparecem como botões, e um clique envia a pergunta. Esse trecho não aparece no texto e não volta para o modelo no histórico da conversa.
+7. **Interrupção:** se a pessoa parar a resposta, os passos dos visuais param também, e o que já estava pronto continua na tela.
+8. **Persistência:** ao reabrir a conversa, os visuais aparecem nos mesmos lugares e no mesmo estado inicial.
 
 Os passos de decisão, seleção e encaixe são escolhas entre opções fixas (sim ou não; quais blocos; qual parágrafo). Use para isso um modelo rápido e barato, separado do que escreve a resposta.
 
@@ -45,7 +46,7 @@ Ajuste o prompt da resposta, **sem apagar o que ele já faz**, para que:
 - diga de qual documento e de qual seção veio a informação;
 - diga claramente quando a resposta não está nos documentos;
 - escreva em parágrafos curtos separados, para que os visuais possam ser encaixados entre eles;
-- use tabelas simples e fluxogramas curtos (até 8 caixas) direto no texto quando organizarem a informação. **Isso fica no texto e não vira componente.**
+- use tabelas simples e fluxogramas curtos (até 8 caixas) direto no texto quando organizarem a informação. **Isso fica no texto e não vira componente.** Se a tela do chat ainda não desenha tabelas ou fluxogramas escritos no texto, implemente isso também.
 
 ## Os componentes
 
@@ -71,14 +72,18 @@ Cada componente recebe só dados (nunca código) e é preenchido com conteúdo d
 **Números e tempo:**
 
 12. **Número em destaque:** um valor importante, com rótulo e detalhe.
-13. **Gráfico de barras**, 14. **gráfico de linha** e 15. **gráfico de pizza** (partes de um todo, até 5 fatias): todos com dica ao passar o mouse e um botão para ver os mesmos dados em tabela.
+13. **Gráfico de barras:** comparar valores entre categorias.
+14. **Gráfico de linha:** um valor que muda ao longo do tempo.
+15. **Gráfico de pizza:** partes de um todo, até 5 fatias.
+
+    Os três gráficos mostram o valor ao passar o mouse e têm um botão para ver os mesmos dados em tabela.
 16. **Linha do tempo:** acontecimentos com data, em ordem.
 
 Monte uma **galeria** acessível no app que mostre todos os componentes funcionando com exemplos do nosso domínio, para o time conhecer o que existe e testar a aparência.
 
 ## Regras que não podem ser quebradas
 
-- **Nenhum código vindo da IA é executado.** As fórmulas do simulador são avaliadas por uma calculadora própria que aceita só números, os nomes das entradas daquele simulador, `+ - * / %`, comparações, "e", "ou", "não" e as funções mínimo, máximo, arredondar e valor absoluto. Qualquer outra coisa invalida o bloco. Inclua testes com tentativas de abuso, como chamadas de função desconhecidas, acesso a propriedades e texto no lugar de número.
+- **Nenhum código vindo da IA é executado.** As fórmulas do simulador são avaliadas por uma calculadora própria que aceita só números, os nomes das entradas daquele simulador, `+ - * / %`, comparações, "e", "ou", "não" e as funções mínimo, máximo, arredondar (para cima, para baixo e ao mais próximo) e valor absoluto. Qualquer outra coisa invalida o bloco. Inclua testes com tentativas de abuso, como chamadas de função desconhecidas, acesso a propriedades e texto no lugar de número.
 - **Só conteúdo recuperado.** Nada de inventar números, datas, regras, perfis ou exemplos que contradigam os documentos. Se a busca não trouxe base, não há visual.
 - **Validação estrita de cada bloco**, com descarte de qualquer bloco que não passe:
   - campos obrigatórios presentes e com o tipo certo;
@@ -87,7 +92,7 @@ Monte uma **galeria** acessível no app que mostre todos os componentes funciona
   - resposta certa do teste entre as opções;
   - fórmulas válidas;
   - limites de quantidade respeitados (etapas, perguntas, fatias, itens).
-  
+
   Campos opcionais que vierem faltando são tratados como vazios. Nada é "consertado" à força.
 - **Linguagem para não técnicos** também nos visuais: rótulos curtos, palavras do dia a dia e siglas explicadas.
 - **Interface sem jargão:** nenhum nome de modelo, provedor ou termo técnico aparece para o usuário. Erros aparecem em linguagem simples (ex.: "Não consegui me conectar. Verifique sua internet e tente de novo"), com um botão "Tentar de novo" e o detalhe técnico escondido em "Detalhes para o suporte".
@@ -103,7 +108,7 @@ Monte uma **galeria** acessível no app que mostre todos os componentes funciona
 ## Etapas
 
 1. **Componentes e galeria:** todos os componentes funcionando com dados de exemplo, nos modos claro e escuro e no celular.
-2. **Passos no servidor:** decisão, preparação, verificação, seleção e encaixe, em paralelo ao texto. Teste com modelos simulados que:
+2. **Passos no servidor:** decisão, preparação, verificação, seleção e encaixe, em paralelo ao texto. Teste, com modelos simulados, que:
    - a ordem dos acontecimentos é decisão, preparação com o texto já chegando, visuais prontos e, por fim, encaixe;
    - uma pergunta pontual não dispara a preparação.
 3. **Tela:** visuais aparecendo aos poucos e mudando de lugar, próximas perguntas, mensagens de erro e conversa reaberta igual.
