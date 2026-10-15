@@ -10,7 +10,8 @@ const statusText = {
 }
 
 export function VisualPanel({ visual, isStreaming }: { visual: Visual; isStreaming: boolean }) {
-  if (visual.status === 'skipped') return null
+  // Enquanto o Jev decide, nada aparece: a maioria das respostas não terá painel.
+  if (visual.status === 'skipped' || visual.status === 'deciding') return null
 
   if (visual.status === 'error') {
     return (

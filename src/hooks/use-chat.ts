@@ -1,10 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import type { ChatEvent, ChatRequestBody } from '@/lib/chat-protocol'
+import type { ChatEvent, ChatRequestBody, VisualMode } from '@/lib/chat-protocol'
 import { runChatInBrowser } from '@/lib/browser-chat'
 import type { ChatDocument, Conversation, Message } from '@/lib/chat-types'
 
 const STORAGE_KEY = 'doc-chat:conversations'
+const VISUAL_MODE_KEY = 'doc-chat:visual-mode'
+
+function loadVisualMode(): VisualMode {
+  try {
+    const value = localStorage.getItem(VISUAL_MODE_KEY)
+    return value === 'always' || value === 'never' ? value : 'auto'
+  } catch {
+    return 'auto'
+  }
+}
 
 function load(): Conversation[] {
   try {
@@ -82,6 +92,7 @@ export function useChat() {
   const [conversations, setConversations] = useState<Conversation[]>(load)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [isStreaming, setIsStreaming] = useState(false)
+  const [visualMode, setVisualModeState] = useState<VisualMode>(loadVisualMode)
   const abortRef = useRef<AbortController | null>(null)
 
   // Salva fora do streaming para não serializar a cada pedaço de texto.
@@ -98,6 +109,70 @@ export function useChat() {
       ),
     )
   }, [])
+
+  const setVisualMode = useCallback((mode: VisualMode) => {
+    setVisualModeState(mode)
+    try {
+      localStorage.setItem(VISUAL_MODE_KEY, mode)
+    } catch {
+      // preferência só desta sessão
+    }
+  }, [])
+
+  // Recebe os eventos de uma chamada e aplica na mensagem do assistente.
+  const stream = useCallback(
+    async (convId: string, msgId: string, body: ChatRequestBody) => {
+      setIsStreaming(true)
+      const controller = new AbortController()
+      abortRef.current = controller
+      try {
+        const events = IS_ARTIFACT
+          ? runChatInBrowser(body, controller.signal)
+          : fetchChat(body, controller.signal)
+        for await (const event of events) {
+          updateMessage(convId, msgId, (m) => applyEvent(m, event))
+        }
+      } catch (err) {
+        if (controller.signal.aborted) {
+          updateMessage(convId, msgId, (m) => ({
+            ...m,
+            stopped: body.answer !== false ? true : m.stopped,
+            visual:
+              m.visual && ['deciding', 'extracting', 'composing'].includes(m.visual.status)
+                ? { ...m.visual, status: m.visual.spec ? 'done' : 'skipped' }
+                : m.visual,
+          }))
+        } else {
+          const message = err instanceof Error ? err.message : String(err)
+          updateMessage(convId, msgId, (m) =>
+            body.answer === false ? { ...m, visual: { status: 'error', message } } : { ...m, error: message },
+          )
+        }
+      } finally {
+        abortRef.current = null
+        setIsStreaming(false)
+      }
+    },
+    [updateMessage],
+  )
+
+  // Gera só o painel para uma resposta que veio sem ele.
+  const visualize = useCallback(
+    (msgId: string) => {
+      if (isStreaming || !active) return
+      const index = active.messages.findIndex((m) => m.id === msgId)
+      if (index < 0) return
+      const history = active.messages.slice(0, index + 1)
+      updateMessage(active.id, msgId, (m) => ({ ...m, visual: { status: 'extracting' } }))
+      void stream(active.id, msgId, {
+        messages: history.filter((m) => m.content.trim()).map((m) => ({ role: m.role, content: m.content })),
+        documents: active.documents.map(({ name, text }) => ({ name, text })),
+        visual: 'always',
+        answer: false,
+      })
+    },
+    [active, isStreaming, stream, updateMessage],
+  )
 
   const send = useCallback(
     async (text: string, files: ChatDocument[]) => {
@@ -131,44 +206,16 @@ export function useChat() {
       }
       setConversations((cs) => [next, ...cs.filter((c) => c.id !== conv.id)])
       setActiveId(conv.id)
-      setIsStreaming(true)
 
-      const controller = new AbortController()
-      abortRef.current = controller
-      const body: ChatRequestBody = {
+      await stream(conv.id, assistantMsg.id, {
         messages: history
           .filter((m) => m.content.trim())
           .map((m) => ({ role: m.role, content: m.content })),
         documents: documents.map(({ name, text }) => ({ name, text })),
-      }
-
-      try {
-        const events = IS_ARTIFACT
-          ? runChatInBrowser(body, controller.signal)
-          : fetchChat(body, controller.signal)
-        for await (const event of events) {
-          updateMessage(conv.id, assistantMsg.id, (m) => applyEvent(m, event))
-        }
-      } catch (err) {
-        if (controller.signal.aborted) {
-          updateMessage(conv.id, assistantMsg.id, (m) => ({
-            ...m,
-            stopped: true,
-            visual:
-              m.visual && (m.visual.status === 'extracting' || m.visual.status === 'composing')
-                ? { ...m.visual, status: m.visual.spec ? 'done' : 'skipped' }
-                : m.visual,
-          }))
-        } else {
-          const message = err instanceof Error ? err.message : String(err)
-          updateMessage(conv.id, assistantMsg.id, (m) => ({ ...m, error: message }))
-        }
-      } finally {
-        abortRef.current = null
-        setIsStreaming(false)
-      }
+        visual: visualMode,
+      })
     },
-    [active, isStreaming, updateMessage],
+    [active, isStreaming, stream, visualMode],
   )
 
   const stop = useCallback(() => abortRef.current?.abort(), [])
@@ -194,5 +241,17 @@ export function useChat() {
     [activeId],
   )
 
-  return { conversations, active, isStreaming, send, stop, newChat, select, remove }
+  return {
+    conversations,
+    active,
+    isStreaming,
+    visualMode,
+    setVisualMode,
+    send,
+    visualize,
+    stop,
+    newChat,
+    select,
+    remove,
+  }
 }

@@ -80,7 +80,13 @@ function App() {
               Anexe um documento e pergunte. Eu respondo e monto um painel visual para ajudar a entender.
             </p>
             <div className="w-full max-w-2xl">
-              <Composer onSend={chat.send} onStop={chat.stop} isStreaming={chat.isStreaming} />
+              <Composer
+                onSend={chat.send}
+                onStop={chat.stop}
+                isStreaming={chat.isStreaming}
+                visualMode={chat.visualMode}
+                onVisualModeChange={chat.setVisualMode}
+              />
             </div>
           </div>
         ) : (
@@ -92,13 +98,21 @@ function App() {
                     key={m.id}
                     message={m}
                     isStreaming={chat.isStreaming && i === messages.length - 1}
+                    onVisualize={chat.isStreaming ? undefined : () => chat.visualize(m.id)}
                   />
                 ))}
                 <div ref={bottomRef} />
               </div>
             </div>
             <div className={cn('mx-auto w-full max-w-3xl px-4 pb-4')}>
-              <Composer onSend={chat.send} onStop={chat.stop} isStreaming={chat.isStreaming} placeholder="Responder…" />
+              <Composer
+                onSend={chat.send}
+                onStop={chat.stop}
+                isStreaming={chat.isStreaming}
+                visualMode={chat.visualMode}
+                onVisualModeChange={chat.setVisualMode}
+                placeholder="Responder…"
+              />
               <p className="text-muted-foreground mt-2 text-center text-[11px]">
                 A IA pode cometer erros. Confira as informações importantes no documento.
               </p>

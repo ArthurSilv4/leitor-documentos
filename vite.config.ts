@@ -62,7 +62,20 @@ export default defineConfig(({ mode }) => {
   return {
     // `vite build --mode artifact` gera a versão estática para o claude.ai
     base: mode === 'artifact' ? './' : '/',
-    build: mode === 'artifact' ? { outDir: 'dist-artifact' } : undefined,
+    // Nomes fixos (sem hash) para republicar o artifact sobrescrevendo os mesmos arquivos
+    build:
+      mode === 'artifact'
+        ? {
+            outDir: 'dist-artifact',
+            rolldownOptions: {
+              output: {
+                entryFileNames: 'assets/[name].js',
+                chunkFileNames: 'assets/[name].js',
+                assetFileNames: 'assets/[name][extname]',
+              },
+            },
+          }
+        : undefined,
     plugins: [react(), tailwindcss(), apiPlugin(env)],
     resolve: {
       alias: {

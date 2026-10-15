@@ -7,10 +7,13 @@ Chat no estilo do Claude para conversar com documentos. Você anexa arquivos (PD
 Para cada pergunta, duas tarefas rodam em paralelo:
 
 1. **Resposta em texto**: um modelo da OpenRouter responde em streaming, com base nos documentos.
-2. **Painel visual**:
-   - outro modelo lê os documentos e extrai até 8 blocos visuais com dados reais (validados contra os schemas do catálogo);
+2. **Painel visual**, só quando ajuda:
+   - o **Jev** primeiro classifica se a pergunta pede um visual (fluxos, papéis, comparações, números) ou se texto basta (pergunta pontual, definição curta, conversa). Na dúvida, fica só no texto;
+   - se pedir, outro modelo lê os documentos e extrai até 8 blocos visuais com dados reais (validados contra os schemas do catálogo);
    - o **Jev**, modelo de decisão da TypeSafe (`typesafe/jev-1.14` na OpenRouter), escolhe quais blocos respondem à pergunta e como organizá-los (`experimental_composeSpec` do json-render);
    - o json-render renderiza o painel com componentes shadcn/ui.
+
+No campo de mensagem, o botão de modo alterna entre **Visual automático** (o Jev decide), **Sempre visual** e **Só texto**. Respostas sem painel ganham o botão **Mostrar visualmente**, que gera o painel sob demanda.
 
 O texto dos documentos é extraído no navegador (pdf.js e mammoth).
 
@@ -40,12 +43,13 @@ A rota `POST /api/chat` existe só no servidor de desenvolvimento do Vite (`vite
 
 ## Estrutura
 
-- `server/chat.ts`: orquestra resposta e painel e emite eventos NDJSON
+- `src/lib/chat-runner.ts`: fluxo de cada pergunta (classificação, resposta, extração e composição), usado pelo servidor e pelo artifact
+- `server/chat.ts`: adaptadores da OpenRouter e do Jev para o fluxo
 - `server/extract.ts`: extração dos blocos via OpenRouter
 - `server/evaluator.ts`: o Jev, via OpenRouter Decisions ou Vercel AI Gateway
 - `src/lib/visual-catalog.ts`: componentes que o painel pode usar (schemas Zod)
 - `src/lib/visual-extract.ts`: prompt de extração e validação dos blocos
-- `src/lib/browser-chat.ts`: o mesmo fluxo no navegador, para a versão artifact
+- `src/lib/browser-chat.ts`: adaptadores do Claude para a versão artifact
 - `src/hooks/use-chat.ts`: estado do chat e conversas salvas
 - `src/components/chat/`: interface do chat
 - `src/components/visual/`: blocos visuais (gráficos com Recharts, diagramas com Mermaid)

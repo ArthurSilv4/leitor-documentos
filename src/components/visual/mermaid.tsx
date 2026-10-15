@@ -80,7 +80,7 @@ async function renderSvg(id: string, code: string, colors: ThemeColors) {
       sequenceNumberColor: colors.card,
     },
     flowchart: { curve: 'basis', padding: 12 },
-    sequence: { showSequenceNumbers: true, mirrorActors: false },
+    sequence: { showSequenceNumbers: true, mirrorActors: false, actorFontSize: 13, messageFontSize: 13, noteFontSize: 13 },
   })
   const { svg } = await mermaid.render(id, code)
   return svg

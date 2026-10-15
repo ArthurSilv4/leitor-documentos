@@ -4,12 +4,19 @@ import type { Spec } from '@json-render/core'
 
 export type ChatRole = 'user' | 'assistant'
 
+// auto: o Jev decide se a pergunta pede um painel; always/never: a pessoa escolheu.
+export type VisualMode = 'auto' | 'always' | 'never'
+
 export type ChatRequestBody = {
   messages: { role: ChatRole; content: string }[]
   documents: { name: string; text: string }[]
+  /** Padrão: auto */
+  visual?: VisualMode
+  /** false gera só o painel (botão "Mostrar visual" numa resposta já dada) */
+  answer?: boolean
 }
 
-export type VisualStatus = 'extracting' | 'composing' | 'done' | 'skipped' | 'error'
+export type VisualStatus = 'deciding' | 'extracting' | 'composing' | 'done' | 'skipped' | 'error'
 
 // A resposta é NDJSON: um ChatEvent por linha.
 export type ChatEvent =

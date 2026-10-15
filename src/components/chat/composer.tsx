@@ -1,10 +1,22 @@
 import { useRef, useState, type KeyboardEvent } from 'react'
-import { ArrowUp, Paperclip, Square } from 'lucide-react'
+import { AlignLeft, ArrowUp, LayoutDashboard, Paperclip, Sparkles, Square } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import type { VisualMode } from '@/lib/chat-protocol'
 import type { ChatDocument } from '@/lib/chat-types'
 import { ACCEPTED_FILES, extractText } from '@/lib/documents'
 import { FileChip } from './file-chip'
+
+const visualModes: Record<VisualMode, { label: string; hint: string; Icon: typeof Sparkles; next: VisualMode }> = {
+  auto: {
+    label: 'Visual automático',
+    hint: 'O Jev decide se a pergunta pede um painel visual',
+    Icon: Sparkles,
+    next: 'always',
+  },
+  always: { label: 'Sempre visual', hint: 'Toda resposta vem com painel visual', Icon: LayoutDashboard, next: 'never' },
+  never: { label: 'Só texto', hint: 'Respostas sem painel visual', Icon: AlignLeft, next: 'auto' },
+}
 
 type PendingFile = {
   id: string
@@ -19,13 +31,18 @@ export function Composer({
   onSend,
   onStop,
   isStreaming,
+  visualMode,
+  onVisualModeChange,
   placeholder = 'Pergunte algo sobre seus documentos…',
 }: {
   onSend: (text: string, files: ChatDocument[]) => void
   onStop: () => void
   isStreaming: boolean
+  visualMode: VisualMode
+  onVisualModeChange: (mode: VisualMode) => void
   placeholder?: string
 }) {
+  const mode = visualModes[visualMode]
   const [text, setText] = useState('')
   const [files, setFiles] = useState<PendingFile[]>([])
   const [dragging, setDragging] = useState(false)
@@ -127,16 +144,29 @@ export function Composer({
             e.target.value = ''
           }}
         />
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => inputRef.current?.click()}
-          aria-label="Anexar documentos"
-          title="Anexar PDF, DOCX, TXT, MD, CSV ou JSON"
-        >
-          <Paperclip />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => inputRef.current?.click()}
+            aria-label="Anexar documentos"
+            title="Anexar PDF, DOCX, TXT, MD, CSV ou JSON"
+          >
+            <Paperclip />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground h-8 gap-1.5 px-2 text-xs font-normal"
+            onClick={() => onVisualModeChange(mode.next)}
+            title={`${mode.hint}. Clique para trocar.`}
+          >
+            <mode.Icon className="size-3.5" />
+            {mode.label}
+          </Button>
+        </div>
 
         {isStreaming ? (
           <Button type="button" size="icon-sm" onClick={onStop} aria-label="Parar">

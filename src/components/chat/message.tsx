@@ -1,11 +1,22 @@
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, LayoutDashboard } from 'lucide-react'
+
+import { Button } from '@/components/ui/button'
 
 import type { Message } from '@/lib/chat-types'
 import { FileChip } from './file-chip'
 import { Markdown } from './markdown'
 import { VisualPanel } from './visual-panel'
 
-export function ChatMessage({ message, isStreaming }: { message: Message; isStreaming: boolean }) {
+export function ChatMessage({
+  message,
+  isStreaming,
+  onVisualize,
+}: {
+  message: Message
+  isStreaming: boolean
+  /** Ausente enquanto outra resposta está sendo gerada */
+  onVisualize?: () => void
+}) {
   if (message.role === 'user') {
     return (
       <div className="flex flex-col items-end gap-2">
@@ -51,6 +62,13 @@ export function ChatMessage({ message, isStreaming }: { message: Message; isStre
       {message.stopped && <p className="text-muted-foreground mt-2 text-xs">Resposta interrompida.</p>}
 
       {message.visual && <VisualPanel visual={message.visual} isStreaming={isStreaming} />}
+
+      {onVisualize && !isStreaming && message.content && (!message.visual || message.visual.status === 'skipped') && (
+        <Button variant="ghost" size="sm" className="text-muted-foreground mt-2 -ml-2 h-8 text-xs" onClick={onVisualize}>
+          <LayoutDashboard className="size-3.5" />
+          Mostrar visualmente
+        </Button>
+      )}
     </div>
   )
 }
